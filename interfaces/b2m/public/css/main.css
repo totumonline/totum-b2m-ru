@@ -1201,11 +1201,17 @@ body:has(:is(.mobile-right-panel.__active, .mobile-search-panel.__active, .heade
   position: relative;
   top: 1px;
   right: 0;
+  display: inline-block;
+  transition: transform 0.2s ease;
 }
 
 @media (hover: hover) {
   .item--like-button:hover {
     color: var(--item-like-button-color-inverted);
+  }
+
+  .item--like-button:hover::before {
+    transform: scale(1.1);
   }
 }
 
@@ -12783,11 +12789,17 @@ body.__pinch-zoomed .---large-image--nav {
   position: relative;
   top: 1px;
   right: 0;
+  display: inline-block;
+  transition: transform 0.2s ease;
 }
 
 @media (hover: hover) {
   .---params--buttons--like-button:hover {
     color: var(--item-like-button-color-inverted);
+  }
+
+  .---params--buttons--like-button:hover::before {
+    transform: scale(1.1);
   }
 }
 
