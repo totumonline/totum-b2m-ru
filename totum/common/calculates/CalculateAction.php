@@ -1,0 +1,2652 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: tatiana
+ * Date: 21.06.17
+ * Time: 15:02
+ */
+
+namespace totum\common\calculates;
+
+use DateTime;
+use DirectoryTree\ImapEngine\Address;
+use DirectoryTree\ImapEngine\Connection\ImapQueryBuilder;
+use DirectoryTree\ImapEngine\Connection\Tokens\Token;
+use DirectoryTree\ImapEngine\Exceptions\Exception as ImapException;
+use DirectoryTree\ImapEngine\Folder;
+use DirectoryTree\ImapEngine\Mailbox;
+use DirectoryTree\ImapEngine\Support\Str as ImapStr;
+use SoapClient;
+use totum\common\criticalErrorException;
+use totum\common\Crypt;
+use totum\common\errorException;
+use totum\common\Field;
+use totum\common\FormatParamsForSelectFromTable;
+use totum\common\Lang\RU;
+use totum\common\Model;
+use totum\common\Totum;
+use totum\common\TotumInstall;
+use totum\fieldTypes\File;
+use totum\models\TmpTables;
+use totum\tableTypes\aTable;
+use totum\tableTypes\RealTables;
+use Exception;
+use totum\tableTypes\tmpTable;
+
+class CalculateAction extends Calculate
+{
+    protected $allStartSections = [];
+
+    use FuncLDAPTrait;
+    use FuncProProfileTrait;
+
+    protected function formStartSections()
+    {
+        foreach ($this->code as $k => $v) {
+            if (preg_match('/^([a-z]*)([\d]*)=$/', $k, $matches) && (!$matches[1] || $matches[2] !== '')) {
+                $this->allStartSections[$matches[1]][$k] = $v;
+                unset($this->code[$k]);
+            }
+        }
+
+
+        foreach ($this->allStartSections as &$v) {
+            uksort(
+                $v,
+                function ($a, $b) {
+                    if ($a === '=') {
+                        return -1;
+                    }
+                    if ($b === '=') {
+                        return 1;
+                    }
+                    $a = str_replace('=', '', $a);
+                    $b = str_replace('=', '', $b);
+                    return $a <=> $b;
+                }
+            );
+        }
+    }
+
+    protected function funcNotificationSend($params)
+    {
+        $params = $this->getParamsArray($params, ['custom'], [], ['custom']);
+
+        $this->__checkNotArrayParams($params, ['title', 'eml', 'ntf']);
+        $this->__checkNotEmptyParams($params, ['title']);
+        if (!empty($params['users'])) {
+            $users = (array)$params['users'];
+            foreach ($users as $user) {
+                if (!is_numeric($user)) {
+                    throw new errorException($this->translate('Parameter %s must contain list of numbers', 'users'));
+                }
+            }
+            $users = $this->Table->getTotum()->getModel('users')->getAll([
+                'id' => $users,
+                'interface' => 'web',
+                'on_off' => 'true'
+            ], 'id, email');
+
+            if (empty($users)) {
+                return;
+            }
+
+            if (!empty($params['ntf'])) {
+                $add = [];
+                foreach ($users as $user) {
+                    $add[] = ['user_id' => $user['id'], 'title' => $params['title'], 'code' => 'admin_text', 'vars' => ['text' => $params['ntf']], 'active' => true];
+                }
+                $this->Table->getTotum()->getTable('notifications')->reCalculateFromOvers(
+                    ['add' => $add]
+                );
+            }
+            if (!empty($params['eml'])) {
+                $emails = [];
+                foreach ($users as $user) {
+                    if (!empty($user['email'])) {
+                        $emails[] = $user['email'];
+                    }
+                }
+                if ($emails) {
+                    $template = $this->Table->getTotum()->getConfig()->getModel('print_templates')->get(
+                        ['name' => 'eml_email'],
+                        'styles, html'
+                    );
+
+                    $template['body'] = preg_replace_callback(
+                        '/{([a-zA-Z_]+)}/',
+                        function ($match) use ($params) {
+                            return match ($match[1]) {
+                                'Title_of_notification' => $params['title'],
+                                'Text' => $params['eml'],
+                                'domen', 'domain' => $this->Table->getTotum()->getConfig()->getFullHostName(),
+                                default => null,
+                            };
+                        },
+                        $template['html']
+                    );
+                    $eml = '<style>' . $template['styles'] . '</style>' . $template['body'];
+
+                    $toBfl = $params['bfl'] ?? in_array(
+                        'email',
+                        $this->Table->getTotum()->getConfig()->getSettings('bfl') ?? []
+                    );
+
+                    try {
+                        foreach ($emails as $email) {
+                            $this->Table->getTotum()->getConfig()->sendMail(
+                                $email,
+                                $params['title'],
+                                $eml
+                            );
+
+                            if ($toBfl) {
+                                $this->Table->getTotum()->getOutersLogger()->debug('email', $params);
+                            }
+                        }
+                    } catch (Exception $e) {
+                        if ($toBfl) {
+                            $this->Table->getTotum()->getOutersLogger()->error(
+                                'email',
+                                ['error' => $e->getMessage()] + $params
+                            );
+                        }
+                        throw new errorException($e->getMessage());
+                    }
+                }
+            }
+            if (!empty($params['custom'])) {
+                $codes = [];
+                foreach ($this->Table->getTotum()->getModel('ttm__custom_user_notific_codes')->getAll([
+                    'name' => array_column($params['custom'], 'field')
+                ], 'name, code') as $row) {
+                    $codes[$row['name']] = $row['code'];
+                };
+
+                foreach ($params['custom'] as $p) {
+                    $name = $p['field'];
+                    $html = $p['value'];
+                    if (empty($html) || empty($code = $codes[$name] ?? null)) {
+                        continue;
+                    }
+
+                    if ($this->Table->getTotum()->getConfig()->isExecSSHOn('inner')) {
+                        foreach ($users as $user) {
+                            $Vars = ['user' => $user['id'], 'title' => $params['title'], 'html' => $html];
+
+                            $data = ['code' => $code, 'vars' => $Vars];
+
+                            $data = base64_encode(json_encode(
+                                $data,
+                                JSON_UNESCAPED_UNICODE
+                            ));
+
+                            $path = $this->Table->getTotum()->getConfig()->getBaseDir();
+
+                            $schema = '';
+
+                            if (method_exists($this->Table->getTotum()->getConfig(), 'setHostSchema')) {
+                                $schema = '--schema "' . $this->Table->getTotum()->getConfig()->getSchema() . '"';
+                            }
+
+                            shell_exec("cd {$path} && bin/totum exec {$schema} {$this->Table->getUser()->getId()} {$data} > /dev/null 2>&1 &");
+                        }
+                    } else {
+                        $CA = new static($code);
+                        try {
+                            foreach ($users as $user) {
+                                $Vars = ['user' => $user['id'], 'title' => $params['title'], 'html' => $html];
+                                $CA->execAction(
+                                    $this->varName,
+                                    $this->oldRow,
+                                    $this->row,
+                                    $this->oldTbl,
+                                    $this->tbl,
+                                    $this->Table,
+                                    $this->vars['tpa'],
+                                    $Vars
+                                );
+                                $this->newLogParent['children'][] = $CA->getLogVar();
+                            }
+                        } catch (errorException $e) {
+                            $this->newLogParent['children'][] = $CA->getLogVar();
+                            throw $e;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    protected function funcExec(string $params): mixed
+    {
+        if ($params = $this->getParamsArray($params, ['var'], ['var'])) {
+            $code = $params['code'] = $params['code'] ?? $params['kod'] ?? null;
+
+            $this->__checkNotEmptyParams($params, ['code']);
+            $this->__checkNotArrayParams($params, ['code']);
+
+
+            if (preg_match('/^[a-z_0-9]{3,}$/', $code) && key_exists($code, $this->Table->getFields())) {
+                $code = $this->Table->getFields()[$code]['codeAction'] ?? '';
+            }
+
+            if (key_exists(
+                    'ssh',
+                    $params
+                ) && $params['ssh'] && ($params['ssh'] === 'true' || $params['ssh'] === true || $params['ssh'] === 'test')) {
+                if (!$this->Table->getTotum()->getConfig()->isExecSSHOn('inner')) {
+                    throw new criticalErrorException($this->translate('Ssh:true in exec function is disabled. Enable execSSHOn in Conf.php.'));
+                }
+
+                $Vars = [];
+                foreach ($params['var'] ?? [] as $v) {
+                    $Vars = array_merge($Vars, $this->getExecParamVal($v, 'var'));
+                }
+
+                $data = ['code' => $code, 'vars' => $Vars];
+                $test = '> /dev/null 2>&1 &';
+                if ($params['ssh'] === 'test') {
+                    $data['test'] = true;
+                    $test = '2>&1';
+                }
+
+                $data = base64_encode(json_encode(
+                    $data,
+                    JSON_UNESCAPED_UNICODE
+                ));
+
+                $path = $this->Table->getTotum()->getConfig()->getBaseDir();
+
+                $schema = '';
+
+                if (method_exists($this->Table->getTotum()->getConfig(), 'setHostSchema')) {
+                    $schema = '--schema "' . $this->Table->getTotum()->getConfig()->getSchema() . '"';
+                }
+
+                return shell_exec("cd {$path} && bin/totum exec {$schema} {$this->Table->getUser()->getId()} {$data} {$test}");
+            } else {
+                $CA = new static($code);
+                try {
+                    $Vars = [];
+                    foreach ($params['var'] ?? [] as $v) {
+                        $Vars = array_merge($Vars, $this->getExecParamVal($v, 'var'));
+                    }
+
+                    $r = $CA->execAction(
+                        $this->varName,
+                        $this->oldRow,
+                        $this->row,
+                        $this->oldTbl,
+                        $this->tbl,
+                        $this->Table,
+                        $this->vars['tpa'],
+                        $Vars
+                    );
+                    $this->newLogParent['children'][] = $CA->getLogVar();
+
+                    return $r;
+                } catch (errorException $e) {
+                    $this->newLogParent['children'][] = $CA->getLogVar();
+                    throw $e;
+                }
+            }
+        }
+        return null;
+    }
+
+    protected function funcSchemaGzStringGet($params)
+    {
+        $params = $this->getParamsArray($params);
+        if (!$this->Table->getUser()->isCreator()) {
+            throw new errorException($this->translate('The function is only available for the Creator role.'));
+        }
+
+        if ($params['password'] !== $this->Table->getUser()->getVar('pass')) {
+            throw new errorException($this->translate('Password doesn\'t match.'));
+        }
+
+        $pathDbPsql = $this->Table->getTotum()->getConfig()->getSshPostgreConnect('pg_dump');
+
+        $tmpFilename = tempnam(
+            $this->Table->getTotum()->getConfig()->getTmpDir(),
+            $this->Table->getTotum()->getConfig()->getSchema() . '.' . $this->Table->getUser()->getId() . '.'
+        );
+
+        $schema = $this->Table->getTotum()->getConfig()->getSchema();
+        $exclude = "--exclude-table-data='{$schema}._tmp_tables'";
+        if (empty($params['withlog'])) {
+            $exclude .= " --exclude-table-data='{$schema}._log'";
+        }
+        if (empty($params['withbfl'])) {
+            $exclude .= " --exclude-table-data='{$schema}._bfl'";
+        }
+        exec(
+            "$pathDbPsql -O --schema '{$schema}' {$exclude} | grep -v '^--' | gzip > \"{$tmpFilename}\"",
+            $data
+        );
+        $f = file_get_contents($tmpFilename);
+        unlink($tmpFilename);
+        return $f;
+    }
+
+    protected function funcSchemaGzStringUpload($params)
+    {
+        $params = $this->getParamsArray($params);
+        if (!$this->Table->getUser()->isCreator()) {
+            throw new errorException($this->translate('The function is only available for the Creator role.'));
+        }
+
+        if ($params['password'] !== $this->Table->getUser()->getVar('pass')) {
+            throw new errorException($this->translate('Password doesn\'t match.'));
+        }
+        if (empty($params['gzstring'])) {
+            throw new errorException($this->translate('Scheme string is empty.'));
+        }
+        $pathDbPsql = $this->Table->getTotum()->getConfig()->getSshPostgreConnect('psql');
+
+
+        $tmpFileName = tempnam(
+            $this->Table->getTotum()->getConfig()->getTmpDir(),
+            $this->Table->getTotum()->getConfig()->getSchema() . '.' . $this->Table->getTotum()->getUser()->getId() . '.'
+        );
+        $tmpFileName2 = tempnam(
+            $this->Table->getTotum()->getConfig()->getTmpDir(),
+            $this->Table->getTotum()->getConfig()->getSchema() . '.' . $this->Table->getTotum()->getUser()->getId() . '.'
+        );
+
+        file_put_contents($tmpFileName, $params['gzstring']);
+        shell_exec("zcat {$tmpFileName} > $tmpFileName2");
+
+        file_put_contents(
+            $tmpFileName,
+            sprintf(
+                'drop schema "%s" cascade; %s',
+                $this->Table->getTotum()->getConfig()->getSchema(),
+                preg_replace(
+                    '/^(REVOKE|GRANT) ALL .*?;[\n\r]*$/m',
+                    '',
+                    file_get_contents($tmpFileName2)
+                )
+            )
+        );
+
+        $tmpErrors = tempnam($this->Table->getTotum()->getConfig()->getTmpDir(), 'schema_errors_');
+
+        shell_exec("$pathDbPsql -q -1 -b -v ON_ERROR_STOP=1 -f $tmpFileName 2>$tmpErrors");
+        if ($errors = file_get_contents($tmpErrors)) {
+            throw new errorException($errors);
+        }
+    }
+
+    protected function funcReCalculateCycle($params)
+    {
+        if ($params = $this->getParamsArray($params)) {
+            $tableRow = $this->__checkTableIdOrName($params['table'], 'table');
+
+            if ($tableRow['type'] !== 'cycles') {
+                throw new errorException($this->translate('The function is only available for cycles tables.'));
+            }
+            $params['cycle'] = $params['cycle'] ?? null;
+
+            if (!is_array($params['cycle']) && empty($params['cycle'])) {
+                if ($this->Table->getTableRow()['id'] === $tableRow['id']) {
+                    $params['cycle'] = $this->row['id'] ?? null;
+                } else {
+                    throw new errorException($this->translate('Fill in the parameter [[%s]].', 'cycle'));
+                }
+            }
+
+            $Cycles = (array)$params['cycle'];
+            foreach ($Cycles as $cycleId) {
+                if (empty($cycleId)) {
+                    continue;
+                }
+                $params['cycle'] = $cycleId;
+                $Cycle = $this->Table->getTotum()->getCycle($params['cycle'], $tableRow['id']);
+                $Cycle->recalculate();
+            }
+        }
+    }
+
+
+    /**
+     * @param $varName
+     * @param $oldRow
+     * @param $newRow
+     * @param $oldTbl
+     * @param $newTbl
+     * @param aTable $table
+     * @param string $type add|delete|change|click|exec
+     * @param $var
+     * @return mixed
+     * @throws errorException
+     */
+    public function execAction($varName, $oldRow, $newRow, $oldTbl, $newTbl, aTable $table, string $type, $var = [])
+    {
+        $var['tpa'] = $type;
+        $r = $this->exec(['name' => $varName], ['v' => null], $oldRow, $newRow, $oldTbl, $newTbl, $table, $var);
+        return $r;
+    }
+
+    public function exec($fieldData, array $newVal, $oldRow, $row, $oldTbl, $tbl, aTable $table, $vars = []): mixed
+    {
+        $s = match ($vars['tpa'] ?? null) {
+            'add' => 'ad',
+            'delete' => 'dl',
+            'change' => 'ch',
+            'click' => 'cl',
+            'exec' => 'ex',
+            default => throw new errorException($this->translate('System error. Action type not specified.')),
+        };
+        $this->startSections = array_merge(
+            $this->allStartSections[''] ?? [],
+            $this->allStartSections['a'] ?? [],
+            $this->allStartSections[$s] ?? []
+        );
+        return parent::exec($fieldData, $newVal, $oldRow, $row, $oldTbl, $tbl, $table, $vars);
+    }
+
+    protected function funcSchemaUpdate($params)
+    {
+        $params = $this->getParamsArray($params);
+        $TotumInstall = new TotumInstall(
+            $this->Table->getTotum()->getConfig(),
+            $this->Table->getTotum()->getUser(),
+            null,
+            $this->Table->getCalculateLog()
+        );
+
+        $params['schema'] = $TotumInstall->applyMatches($params['schema'], $params);
+        if (empty($params['matches_name'])) {
+            throw new errorException($this->translate('Scheme source not defined.'));
+        }
+
+        $TotumInstall->updateSchema($params['schema'], true, $params['matches_name']);
+        $serviceName = $this->Table->getTotum()->getConfig()->getProGoModuleServiceName();
+
+        $this->Table->getTotum()->addOnEnd(function () use ($serviceName) {
+            shell_exec("sudo service $serviceName restart");
+        });
+    }
+
+    protected function funcLinkToButtons($params)
+    {
+        $params = $this->getParamsArray($params);
+        $this->__checkNotEmptyParams($params, ['title', 'buttons']);
+        $this->__checkNotArrayParams($params, ['title']);
+
+        $this->__checkListParam($params, 'buttons');
+
+        $params['refresh'] = $params['refresh'] ?? false;
+        $params['env'] = $this->getEnvironment();
+
+        $requiredByttonParams = ['text', 'code'];
+        $buttons = [];
+        foreach ($params['buttons'] as $i => $btn) {
+            foreach ($requiredByttonParams as $req) {
+                if (empty($btn[$req])) {
+                    throw new errorException($this->translate('Each button must contain [[%s]].', $req));
+                }
+            }
+            if (key_exists('vars', $btn) && !is_array($btn['vars'])) {
+                throw new errorException($this->translate(
+                    'The parameter [[%s]] of [[%s]] should be of type row/list.',
+                    ['vars', 'button ' . ($i + 1)]
+                ));
+            }
+
+            unset($btn['code']);
+            unset($btn['vars']);
+
+            $btn['refresh'] = $btn['refresh'] ?? $params['refresh'];
+            $buttons[] = $btn;
+        }
+
+        $model = $this->Table->getTotum()->getModel('_tmp_tables', true);
+
+        do {
+            $hash = md5(microtime(true) . '__linktobuttons_' . mt_srand());
+            $key = ['table_name' => '_linkToButtons', 'user_id' => $this->Table->getUser()->getId(), 'hash' => $hash];
+        } while ($model->getField('user_id', $key));
+
+        $vars = array_merge(
+            ['tbl' => json_encode(
+                $params,
+                JSON_UNESCAPED_UNICODE
+            ),
+                'touched' => date('Y-m-d H:i')],
+            $key
+        );
+
+
+        $model->insertPrepared(
+            $vars,
+            false
+        );
+        $params['hash'] = $hash;
+
+        $params['buttons'] = $buttons;
+        $this->Table->getTotum()->addToInterfaceDatas('buttons', $params);
+    }
+
+    /* *
+     * used in funclinktoinputselect
+     * */
+    protected function funcLinkToInput($params)
+    {
+        $params = $this->getParamsArray($params, ['var'], [], ['var']);
+        if (empty($params['title'])) {
+            throw new errorException($this->translate('Fill in the parameter [[%s]].', 'title'));
+        }
+        if (empty($params['code'])) {
+            throw new errorException($this->translate('Fill in the parameter [[%s]].', 'code'));
+        }
+
+        $params['input'] = '';
+        $vars = [];
+        foreach ($params['var'] ?? [] as $_) {
+            $vars[$_['field']] = $_['value'];
+        }
+        $params['vars'] = $vars;
+        unset($params['var']);
+
+        $params['env'] = $this->getEnvironment();
+
+        $model = $this->Table->getTotum()->getModel('_tmp_tables', true);
+
+        do {
+            $hash = md5(microtime(true) . '__linktoinput_' . mt_srand());
+            $key = ['table_name' => '_linkToInput', 'user_id' => $this->Table->getUser()->getId(), 'hash' => $hash];
+        } while ($model->getField('user_id', $key));
+
+        $vars = array_merge(
+            ['tbl' => json_encode(
+                $params,
+                JSON_UNESCAPED_UNICODE
+            ),
+                'touched' => date('Y-m-d H:i')],
+            $key
+        );
+        $model->insertPrepared(
+            $vars,
+            false
+        );
+        $params['hash'] = $hash;
+        $this->Table->getTotum()->addToInterfaceDatas(
+            'input',
+            array_intersect_key(
+                $params,
+                ['value' => 1, 'title' => 1, 'html' => 1, 'height' => 1, 'hash' => 1, 'refresh' => 1, 'button' => 1, 'close' => 1, 'type' => 1, 'multiple' => 1, 'selectAndSave' => 1]
+            )
+        );
+    }
+
+    protected function funcLinkToInputSelect($params)
+    {
+        $params = $this->getParamsArray($params, ['var'], [], ['var']);
+        $params['type'] = 'select';
+        $this->__checkNotEmptyParams($params, ['codeselect']);
+        if (($params['multiple'] ?? false) === 'force') {
+            $params['multiple'] = false;
+            $params['selectAndSave'] = true;
+        }
+        $this->funcLinkToInput($params);
+    }
+
+    protected function funcLinkToEdit($params)
+    {
+        $params = $this->getParamsArray($params, ['var'], [], ['var']);
+
+        $this->__checkNotEmptyParams($params, 'field');
+        $this->__checkNotArrayParams($params, ['field', 'title']);
+
+        $tableRow = $this->__checkTableIdOrName($params['table'], 'table');
+        $LinkedTable = $this->getActionTable($tableRow, $params);
+
+        if (!key_exists($params['field'], $LinkedTable->getFields())) {
+            throw new errorException(
+                $this->translate(
+                    'The [[%s]] field is not found in the [[%s]] table.',
+                    [$params['field'], $LinkedTable->getTableRow()['name']]
+                )
+            );
+        } elseif (in_array($LinkedTable->getFields()[$params['field']]['type'], ['link', 'button', 'fieldParams'])) {
+            throw new errorException(
+                $this->translate(
+                    'Function [[linkToEdit]] not available for [[%s]] field type.',
+                    $LinkedTable->getFields()[$params['field']]['type']
+                )
+            );
+        }
+
+        $Field = Field::init($LinkedTable->getFields()[$params['field']], $LinkedTable);
+
+        if (!empty($params['id'])) {
+            $this->__checkNumericParam($params['id'], 'id');
+            $LinkedTable->loadFilteredRows('inner', [$params['id']]);
+            if (!key_exists($params['id'], $LinkedTable->getTbl()['rows'])) {
+                throw new errorException($this->translate('Row not found'));
+            }
+            $value = $LinkedTable->getTbl()['rows'][$params['id']][$params['field']] ?? ['v' => null];
+            $Field->addViewValues(
+                'edit',
+                $value,
+                $LinkedTable->getTbl()['rows'][$params['id']],
+                $LinkedTable->getTbl()
+            );
+        } else {
+            $value = $LinkedTable->getTbl()['params'][$params['field']] ?? ['v' => null];
+        }
+
+
+        $data = [];
+        $data['table']['name'] = $LinkedTable->getTableRow()['name'];
+        $data['table']['field'] = $params['field'];
+        if ($params['id'] ?? 0) {
+            $data['table']['id'] = $params['id'];
+        }
+
+        switch ($LinkedTable->getTableRow()['type']) {
+            case 'calcs':
+                $data['table']['extra'] = $LinkedTable->getCycle()->getId();
+                break;
+            case 'tmp':
+                $data['table']['extra'] = $LinkedTable->getTableRow()['sess_hash'];
+        }
+
+        /** @var TmpTables $model */
+        $model = $this->Table->getTotum()->getModel('_tmp_tables', true);
+
+        $newHash = $model->getNewHash(
+            TmpTables::SERVICE_TABLES['linktoedit'],
+            $this->Table->getTotum()->getUser(),
+            $data
+        );
+
+        $fieldData = $LinkedTable->getFields()[$params['field']];
+        foreach ($fieldData as $k => &$v) {
+            if (in_array($k, Totum::FIELD_CODE_PARAMS)) {
+                $v = true;
+            } elseif (in_array($k, Totum::FIELD_ROLES_PARAMS)) {
+                $v = [];
+            }
+        }
+
+        if ($fieldData['type'] === 'number') {
+            $fieldData['dectimalSeparator'] = $fieldData['dectimalSeparator'] ?? $this->Table->getTotum()->getConfig()->getSettings('numbers_format')['dectimalSeparator'] ?? ',';
+        } elseif ($fieldData['type'] === 'file' && $fieldData['secureFile'] === true) {
+            @session_start();
+            $_SESSION['secureLinkToEditAccess'][$newHash][$LinkedTable->getTableRow()['id']][$LinkedTable->getCycle()?->getId() ?? 0][$params['id'] ?? 0][$fieldData['name']] = true;
+            session_write_close();
+        }
+
+        $this->Table->getTotum()->addToInterfaceDatas(
+            'editField',
+            [
+                'title' => $params['title'] ?? '',
+                'hash' => $newHash,
+                'field' => $fieldData,
+                'value' => $value,
+                'refresh' => $params['refresh'] ?? false
+            ]
+        );
+    }
+
+    protected function funcSleep(string $params)
+    {
+        $params = $this->getParamsArray($params, [], []);
+        $sec = (float)($params['sec'] ?? 0);
+        $sleep = (int)floor($sec);
+        $usleep = $sec - $sleep;
+        $usleep *= 1000000;
+
+        if ($sleep > 0) {
+            sleep($sleep);
+        }
+        if ($usleep > 0) {
+            usleep($usleep);
+        }
+    }
+
+    protected function funcEmailSend($params)
+    {
+        $params = $this->getParamsArray($params, [], []);
+
+        if (empty($params['to'])) {
+            throw new errorException($this->translate('Fill in the parameter [[%s]].', 'to'));
+        }
+        if (empty($params['title'])) {
+            throw new errorException($this->translate('Fill in the parameter [[%s]].', 'title'));
+        }
+        if (empty($params['body'])) {
+            throw new errorException($this->translate('Fill in the parameter [[%s]].', 'body'));
+        }
+
+        $toBfl = $params['bfl'] ?? in_array(
+            'email',
+            $this->Table->getTotum()->getConfig()->getSettings('bfl') ?? []
+        );
+
+        $smtpData = null;
+
+        if (!empty($params['smtp'])) {
+            $params['smtp'] = (string)$params['smtp'];
+
+            $users_smtp = $this->Table->getTotum()->getTable('ttm__users_smtp');
+            $smtpData = $users_smtp->getByParams(
+                (new FormatParamsForSelectFromTable())
+                    ->where('name', $params['smtp'])
+                    ->field("smtp_from")
+                    ->field("smtp_settings")
+                    ->field("signature")
+                    ->field("list_unsubscribe")
+                    ->params(),
+                "row"
+            );
+            if (empty($smtpData)) {
+                throw new errorException($this->translate('Smtp [[%s]] is not found', $params['smtp']));
+            }
+            foreach ($smtpData['smtp_settings'] as $k => $v) {
+                $smtpData[$k] = $v;
+            }
+        }
+
+        try {
+            if ($smtpData) {
+                $r = $this->Table->getTotum()->getConfig()->sendMailWithSMTP(
+                    $params['to'],
+                    $params['title'],
+                    $params['body'],
+                    $params['files'] ?? [],
+                    $params['from'] ?? null,
+                    replyTo: $params['replyto'] ?? null,
+                    hcopy: $params['hiddencopy'] ?? null,
+                    smtpData: $smtpData,
+                );
+            } else {
+                $r = $this->Table->getTotum()->getConfig()->sendMail(
+                    $params['to'],
+                    $params['title'],
+                    $params['body'],
+                    $params['files'] ?? [],
+                    $params['from'] ?? null,
+                    replyTo: $params['replyto'] ?? null,
+                    hcopy: $params['hiddencopy'] ?? null,
+                );
+            }
+
+            if ($toBfl) {
+                $this->Table->getTotum()->getOutersLogger()->debug('email', $params);
+            }
+            return $r;
+        } catch (Exception $e) {
+            if ($toBfl) {
+                $this->Table->getTotum()->getOutersLogger()->error(
+                    'email',
+                    ['error' => $e->getMessage()] + $params
+                );
+            }
+            throw new errorException($e->getMessage());
+        }
+    }
+
+    protected function funcTryCatch($params)
+    {
+        $paramsBefore = $this->getParamsArray($params, [], ['catch', 'try']);
+
+        if (!array_key_exists('try', $paramsBefore)) {
+            throw new errorException($this->translate('Fill in the parameter [[%s]].', 'try'));
+        }
+        if (!array_key_exists('catch', $paramsBefore)) {
+            throw new errorException($this->translate('Fill in the parameter [[%s]].', 'catch'));
+        }
+
+        try {
+            return $this->getParamsArray($params, [], ['error', 'catch'])['try'];
+        } catch (Exception $e) {
+            $this->vars[$paramsBefore['error'] ?? 'exception'] = $e->getMessage();
+            return $this->execSubCode($paramsBefore['catch'], 'catch');
+        }
+    }
+
+    protected function funcGetFromSoap($params)
+    {
+        $params = $this->getParamsArray($params, [], []);
+        if (array_key_exists(
+                'options',
+                $params
+            ) && !is_array($params['options'])) {
+            throw new errorException($this->translate('The parameter [[%s]] should be of type row/list.', 'options'));
+        }
+
+
+        $toBfl = $params['bfl'] ?? in_array(
+            'soap',
+            $this->Table->getTotum()->getConfig()->getSettings('bfl') ?? []
+        );
+        try {
+            $soapClient = new SoapClient(
+                $params['wsdl'] ?? null,
+                (['cache_wsdl' => WSDL_CACHE_NONE,
+                        'exceptions' => true,
+                        'soap_version' => SOAP_1_2,
+                        'trace' => 1,
+                    ] + ($params['options'] ?? []))
+            );
+
+
+            if (array_key_exists('params', $params)) {
+                $res = $soapClient->{$params['func']}(json_decode(json_encode(
+                    $params['params'],
+                    JSON_UNESCAPED_UNICODE
+                )));
+            } else {
+                $res = $soapClient->{$params['func']}();
+            }
+
+            $objectToArray = function ($d) use (&$objectToArray) {
+                if (is_object($d)) {
+                    $d = (array)$d;
+                }
+                if (is_array($d)) {
+                    return array_map($objectToArray, $d);
+                } else {
+                    return $d;
+                }
+            };
+            $data = $objectToArray($res);
+            if ($toBfl) {
+                $this->Table->getTotum()->getOutersLogger()->debug(
+                    'SOAP',
+                    ['xml_request' => $soapClient->__getLastRequest(), 'xml_response' => $soapClient->__getLastResponse(), 'data_request' => $params, 'data_response' => $data]
+                );
+            }
+            return $data;
+        } catch (Exception $e) {
+            if ($toBfl) {
+                if (!empty($soapClient)) {
+                    $this->Table->getTotum()->getOutersLogger()->error(
+                        'SOAP' . $e->getMessage(),
+                        ['xml_request' => $soapClient->__getLastRequest(),
+                            'xml_response' => $soapClient->__getLastResponse(),
+                            'data_request' => $params, 'data_response' => $data ?? '',
+                            'error' => $e->getMessage()]
+                    );
+                } else {
+                    $this->Table->getTotum()->getOutersLogger()->error(
+                        'SOAP',
+                        ['xml_request' => null, 'xml_response' => null,
+                            'data_request' => $params, 'data_response' => null,
+                            'error' => $e->getMessage()]
+                    );
+                }
+            }
+            throw new errorException($e->getMessage());
+        }
+    }
+
+    protected function funcLinkToFileDownload($params)
+    {
+        $params = $this->getParamsArray($params, ['file']);
+        $files = array_merge($params['files'] ?? [], $params['file'] ?? []);
+        $this->__checkNotArrayParams($params, ['zip']);
+
+        $checkFile = function ($file, $withType = true) {
+            if (empty($file['name'])) {
+                throw new errorException($this->translate('Fill in the parameter [[%s]].', 'name'));
+            }
+            if (empty($file['filestring']) && empty($file['file'])) {
+                throw new errorException($this->translate('Fill in the parameter [[%s]].', 'filestring || file'));
+            }
+            if ($withType && empty($file['file']) && empty($file['type'])) {
+                throw new errorException($this->translate('Fill in the parameter [[%s]].', 'type'));
+            }
+        };
+
+
+        if (!empty($params['zip'])) {
+            $zip = new \ZipArchive();
+            $Config = $this->Table->getTotum()->getConfig();
+            $tmp_file = tempnam(
+                $Config->getTmpDir(),
+                $Config->getSchema() . '.FilesDownloadZip' . $this->Table->getTotum()->getUser()->getId() . '.'
+            );
+            unlink($tmp_file);
+            if ($zip->open($tmp_file, \ZipArchive::CREATE)) {
+                foreach ($files as $file) {
+                    $checkFile($file, false);
+                    $zip->addFromString($file['name'], $file['filestring']);
+                }
+                $zip->close();
+                if (!str_ends_with($name = $params['zip'], '.zip')) {
+                    $name .= '.zip';
+                }
+                $files = [
+                    ['name' => $name, 'type' => 'application/zip', 'string' => base64_encode(file_get_contents($tmp_file))]
+                ];
+                unlink($tmp_file);
+            } else {
+                throw new errorException('Creation zip archive error');
+            }
+        } else {
+            foreach ($files as &$file) {
+                $checkFile($file);
+                if ($file['file'] ?? false) {
+                    $fileData = File::getContent($file['file'], $this->Table->getTotum()->getConfig(), true);
+                    if (!is_array($fileData)) {
+                        throw new errorException($this->translate('File [[%s]] is not found.', $file['file']));
+                    }
+                    list($fileContent, $mime) = $fileData;
+                    $file['string'] = base64_encode($fileContent);
+                    $file['type'] = $mime;
+                    unset($file['filestring']);
+                } else {
+                    $file['string'] = base64_encode($file['filestring']);
+                    unset($file['filestring']);
+                }
+            }
+            unset($file);
+        }
+
+        $this->Table->getTotum()->addToInterfaceDatas('files', ['files' => $files]);
+    }
+
+    protected function funcLinkToFileUpload($params)
+    {
+        $params = $this->getParamsArray($params, ['var'], [], ['var']);
+        if (empty($params['title'])) {
+            throw new errorException($this->translate('Fill in the parameter [[%s]].', 'title'));
+        }
+        if (empty($params['code'])) {
+            throw new errorException($this->translate('Fill in the parameter [[%s]].', 'code'));
+        }
+
+        $vars = [];
+        foreach ($params['var'] ?? [] as $_) {
+            $vars[$_['field']] = $_['value'];
+        }
+
+        $saveData = [];
+        $saveData['vars'] = $vars;
+        $saveData['env'] = $this->getEnvironment();
+        $saveData['code'] = $params['code'];
+
+        $model = $this->Table->getTotum()->getModel('_tmp_tables', true);
+
+        do {
+            $hash = md5(microtime(true) . '__linktofileupload_' . mt_srand());
+            $key = ['table_name' => '_linkToFileUpload', 'user_id' => $this->Table->getUser()->getId(), 'hash' => $hash];
+        } while ($model->getField('user_id', $key));
+
+
+        $vars = array_merge(
+            ['tbl' => json_encode(
+                $saveData,
+                JSON_UNESCAPED_UNICODE
+            ),
+                'touched' => date('Y-m-d H:i')],
+            $key
+        );
+        $model->insertPrepared(
+            $vars,
+            false
+        );
+        $params['hash'] = $hash;
+        $this->Table->getTotum()->addToInterfaceDatas(
+            'fileUpload',
+            ['hash' => $hash, 'type' => $params['type'] ?? '*', 'limit' => $params['limit'] ?? 1, 'title' => $params['title'] ?? ''],
+            $params['refresh'] ?? false
+        );
+    }
+
+    protected function funcLinkToPanel($params)
+    {
+        $params = $this->getParamsArray($params, ['field'], ['field'], ['bfield']);
+        $tableRow = $this->__checkTableIdOrName($params['table'], 'table');
+        $link = '/Table/';
+
+
+        $columns = match ($params['columns'] ?? null) {
+            1, '1' => 1,
+            2, '2' => 2,
+            default => null
+        };
+
+        if ($tableRow['type'] === 'calcs') {
+            if ($topTableRow = $this->Table->getTotum()->getTableRow($tableRow['tree_node_id'])) {
+                if ($this->Table->getTableRow()['type'] === 'calcs' && (int)$tableRow['tree_node_id'] === $this->Table->getCycle()->getCyclesTableId() && empty($params['cycle'])) {
+                    $Cycle_id = $this->Table->getCycle()->getId();
+                } elseif ($this->Table->getTableRow()['type'] === 'cycles' && (int)$tableRow['tree_node_id'] === $this->Table->getTableRow()['id'] && !empty($this->row['id'])) {
+                    $Cycle_id = $this->row['id'];
+                } else {
+                    $this->__checkNumericParam($params['cycle'], 'cycle');
+                    $Cycle_id = $params['cycle'];
+                }
+
+                $link .= $topTableRow['top'] . '/' . $topTableRow['id'] . '/' . $Cycle_id . '/' . $tableRow['id'] . '/';
+
+                if (!empty($params['bfield'])) {
+                    $Table = $this->Table->getTotum()->getCycle(
+                        $Cycle_id,
+                        $topTableRow['id']
+                    )->getTable($tableRow['id']);
+                }
+            } else {
+                throw new errorException($this->translate('The cycles table is specified incorrectly.'));
+            }
+        } else {
+            $link .= $tableRow ['top'] . '/' . $tableRow['id'] . '/';
+
+            if ($tableRow['type'] === 'tmp') {
+                if ($params['hash'] ?? null) {
+                    $this->__checkNotArrayParams($params, ['hash']);
+                    $hash = $params['hash'];
+                } elseif ($this->Table->getTableRow()['id'] === $tableRow['id']) {
+                    $hash = $this->Table->getTableRow()['sess_hash'];
+                } else {
+                    $this->__checkNotEmptyParams($params, ['hash']);
+                }
+                if (!empty($hash)) {
+                    $link .= '?sess_hash=' . $hash;
+                }
+                $Table = $this->Table->getTotum()->getTable($tableRow['id'], $hash);
+            } else {
+                $Table = $this->Table->getTotum()->getTable($tableRow['id']);
+            }
+        }
+        $titles = [];
+        if (!empty($params['titles'])) {
+            $this->__checkListParam($params['titles'], 'titles');
+
+            foreach (($params['titles'] ?? []) as $k => $v) {
+                if (is_array($v)) {
+                    if (key_exists('name', $v) && is_string($v['name']) && key_exists('title', $v)) {
+                        $titles[$v['name']] = $v['title'];
+                    }
+                } else {
+                    $titles[$k] = $v;
+                }
+            }
+        }
+        $settings = [];
+        if (!empty($params['fieldsettings'])) {
+            $this->__checkListParam($params['fieldsettings'], 'fieldsettings');
+            foreach ($params['fieldsettings'] as $k => $_) {
+                $v = array_intersect_key($_, ['view' => 1, 'columns' => 1, 'title' => 1, 'checkbox' => 1]);
+
+                $v['titleClass'] = match ($v['title'] ?? null) {
+                    'top', 'bottom', 'left' => 'label-' . $v['title'],
+                    default => 'label-right'
+                };
+                unset($v['title']);
+
+                $v['checkboxClass'] = match ($v['checkbox'] ?? null) {
+                    'center', 'right', 'left' => 'checkbox-' . $v['checkbox'],
+                    default => 'checkbox-center'
+                };
+                unset($v['checkbox']);
+
+                if (!empty($v['columns'])) {
+                    if (is_numeric($v['columns'])) {
+                        $v['columns'] = str_repeat('1fr ', $v['columns']);
+                    } elseif (is_array($v['columns'])) {
+                        foreach ($v['columns'] as $_a) {
+                            if (is_array($_a)) {
+                                throw new errorException($this->translate('None of the elements of the %s parameter array must be a list.', 'fieldsettings:columns'));
+                            }
+                        }
+                        $v['columns'] = implode(' ', $v['columns']);
+                    }
+                }
+
+                if (key_exists('name', $v) && is_string($v['name']) && key_exists('title', $v)) {
+                    $settings[$v['name']] = $v;
+                    unset($settings[$v['name']]['name']);
+                } else {
+                    $settings[$k] = $v;
+                }
+            }
+        };
+
+        if (!empty($params['fields'])) {
+            $params['fields'] = (array)$params['fields'];
+            $fieldsKeys = array_flip($params['fields']);
+            $settings = array_intersect_key($settings, $fieldsKeys);
+            $titles = array_intersect_key($titles, $fieldsKeys);
+        }
+
+
+        $addLinkToPanel = function ($link, $id, $field) use ($titles, $columns, $params, $settings) {
+            $this->Table->getTotum()->addLinkPanel(
+                $link,
+                $id,
+                $field,
+                $params['refresh'] ?? false,
+                (array)($params['fields'] ?? []),
+                columns: $columns,
+                titles: $titles,
+                settings: $settings
+            );
+        };
+
+        if (!empty($params['bfield']) && !empty($params['bfield']['value'])) {
+            foreach ((array)$params['bfield']['value'] as $bfieldValue) {
+                $id = $Table->getByParams(['field' => 'id', 'where' => [
+                    ['field' => $params['bfield']['field'], 'operator' => '=', 'value' => $bfieldValue]
+                ]], 'field');
+                if (!$id) {
+                    throw new errorException($this->translate('Value not found'));
+                }
+                $addLinkToPanel($link, $id, [],);
+            }
+        } elseif (!empty($params['id'])) {
+            $ids = (array)$params['id'];
+            foreach ($ids as $id) {
+                $addLinkToPanel($link, $id, [],);
+            }
+        } elseif (!empty($params['field'])) {
+            $field = $this->__getActionFields($params['field'], 'LinkToPanel');
+            foreach ($field as &$v) {
+                $v = ['v' => $v];
+            }
+            $addLinkToPanel($link, null, $field,);
+        } else {
+            $addLinkToPanel($link, null, [],);
+        }
+    }
+
+    protected function funcLinkToPrint($params)
+    {
+        $params = $this->getParamsArray($params);
+
+        $getTemplate = function ($name) {
+            return $this->Table->getTotum()->getModel('print_templates')->getPrepared(
+                ['name' => $name],
+                'styles, html, name'
+            );
+        };
+
+        $this->__checkNotArrayParams($params, ['template', 'text']);
+
+        if ($params['template'] ?? null) {
+            if ($main = $getTemplate($params['template'])) {
+                $mainTemplate = $main['html'];
+                $style = $main['styles'];
+            } else {
+                throw new errorException($this->translate('Template not found.'));
+            }
+        } elseif ($params['text'] ?? null) {
+            $mainTemplate = $params['text'];
+            $style = null;
+        } else {
+            throw new errorException($this->translate('Template not found.'));
+        }
+
+
+        $usedStyles = [];
+
+        $body = $this->replaceTemplates(
+            $mainTemplate,
+            $params['data'] ?? [],
+            $getTemplate,
+            $style,
+            $usedStyles
+        );
+
+        $this->Table->getTotum()->addToInterfaceDatas(
+            'print',
+            [
+                'body' => $body,
+                'styles' => $style
+            ]
+        );
+    }
+
+    protected function funcLinkToData($params)
+    {
+        $params = $this->getParamsArray($params, ['field']);
+        switch ($params['type'] ?? '') {
+            case 'text':
+                $this->funcLinkToDataText($params);
+                break;
+            case 'table':
+                $this->funcLinkToDataTable($params);
+                break;
+        }
+    }
+
+    protected function funcProGetAuthorizationLink($params)
+    {
+        $params = $this->getParamsArray($params, ['filter']);
+        $this->__checkNotArrayParams($params, ['type', 'user', 'timeout', 'table']);
+        $this->__checkNotEmptyParams($params, ['user', 'timeout']);
+        $this->__checkNumericParam($params['user'], 'user');
+
+        $data = [];
+        $data['target'] = [];
+        if ($params['table'] ?? false) {
+            $table = $this->__checkTableIdOrName($params['table'], 'table')['id'];
+            $data['target'] = ['t' => $table];
+            if ($params['filter'] ?? []) {
+                foreach ($params['filter'] as $f) {
+                    $data['target']['f'][$f['field']] = $f['value'];
+                }
+            }
+            if ($params['cycle'] ?? false) {
+                $this->__checkNumericParam($params['cycle'], 'cycle');
+                $data['target']['c'] = $params['cycle'];
+            }
+        }
+
+        $token = null;
+        switch ($params['type'] ?? 'single') {
+            case 'single':
+                if (method_exists($this->Table->getTotum()->getConfig(), 'singleAuthToken') && is_numeric($params['timeout']) && $params['timeout'] < 3600) {
+                    $token = $this->Table->getTotum()->getConfig()->singleAuthToken([
+                        'user' => $params['user'],
+                        'timeout' => $params['timeout'],
+                        'target' => $data['target']
+                    ]);
+                } else {
+                    $prefix = 's-';
+                    $data['multiple'] = false;
+                }
+                break;
+            case 'multiple':
+                $prefix = 'm-';
+                $data['multiple'] = true;
+                break;
+            default:
+                throw new errorException($this->translate('The %s should be here.', 'single/multiple'));
+        }
+
+        if (!$token) {
+            $data['auth_user'] = $params['user'];
+            if (strpos($params['timeout'], '-')) {
+                $Date = date_create($params['timeout']);
+            } elseif (is_numeric($params['timeout'])) {
+                $Date = date_create();
+                $Date->modify($params['timeout'] . ' seconds');
+            } else {
+                throw new errorException($this->translate('The [[%s]] parameter is not correct.', 'timeout'));
+            }
+
+            $date = $Date->format('Y-m-d H:i:s');
+
+            $data['expire'] = $date;
+
+
+            $i = 0;
+            do {
+                try {
+                    $token = $prefix . md5(microtime(true));
+                    $table = $this->Table->getTotum()->getTable('ttm__auth_tokens');
+                    $data['token'] = $token;
+                    $table->reCalculateFromOvers([
+                        'add' => [
+                            $data
+                        ]
+                    ]);
+                    break;
+                } catch (errorException) {
+                }
+            } while ($i++ < 10);
+        }
+
+        return 'https://' . $this->Table->getTotum()->getConfig()->getFullHostName() . '/Auth/Token/' . $token;
+    }
+
+    protected function funcProLinkToBuffer($params)
+    {
+        $params = $this->getParamsArray($params);
+        $text = $params['text'] ?? '';
+        if ($text !== '') {
+            $this->Table->getTotum()->addToInterfaceDatas(
+                'buffer',
+                ['text' => $text]
+            );
+        }
+    }
+
+
+    protected function funcEncriptedFormParams($params)
+    {
+        $params = $this->getParamsArray($params);
+        $d = [];
+        if (!empty($params['data'])) {
+            $d['d'] = $params['data'];
+        }
+        if (!empty($params['params'])) {
+            $d['p'] = $params['params'];
+        }
+        if ($d) {
+            return 'd=' . urlencode(Crypt::getCrypted(
+                    json_encode($d, JSON_UNESCAPED_UNICODE),
+                    $this->Table->getTotum()->getConfig()->getCryptSolt()
+                ));
+        }
+    }
+
+    protected function funcLinkToDataText($params)
+    {
+        $params = $this->getParamsArray($params);
+
+        $title = $params['title'] ?? $this->translate('The %s should be here.', 'title');
+
+        $width = $params['width'] ?? 600;
+
+        $params['text'] = is_array($params['text']) ?
+            'OBJECT: ' . json_encode($params['text'], JSON_UNESCAPED_UNICODE) :
+            $params['text'] ?? '';
+
+        $this->Table->getTotum()->addToInterfaceDatas(
+            'text',
+            ['title' => $title, 'width' => $width, 'height' => ($params['height'] ?? null), 'htmlescaping' => true, 'text' => $params['text'], 'close' => !!($params['close'] ?? false)],
+            $params['refresh'] ?? false
+        );
+    }
+
+    protected function funcLinkToDataJson($params)
+    {
+        $params = $this->getParamsArray($params, ['var'], [], ['var']);
+
+        $title = $params['title'] ?? $this->translate('The %s should be here.', 'title');
+
+        $width = $params['width'] ?? 600;
+
+        $data = ['title' => $title,
+            'width' => $width,
+            'json' => $params['data'],
+            'refresh' => $params['refresh'] ?? false];
+
+
+        if (!empty($params['code'])) {
+            $vars = [];
+            foreach ($params['var'] ?? [] as $var) {
+                $vars[$var['field']] = $var['value'];
+            }
+            $saveData = ['code' => $params['code'], 'var' => $vars];
+
+            /** @var TmpTables $model */
+            $model = $this->Table->getTotum()->getNamedModel(TmpTables::class);
+            $saveData['env'] = $this->getEnvironment();
+
+            $hash = $model->getNewHash(
+                TmpTables::SERVICE_TABLES['linktodatajson'],
+                $this->Table->getTotum()->getUser(),
+                $saveData
+            );
+
+
+            $data['hash'] = $hash;
+            $data['buttontext'] = $params['buttontext'] ?? 'OK';
+        }
+
+        $this->Table->getTotum()->addToInterfaceDatas(
+            'json',
+            $data
+        );
+    }
+
+    protected function funcLinkToDataHtml($params)
+    {
+        $params = $this->getParamsArray($params);
+
+        $title = $params['title'] ?? $this->translate('The %s should be here.', 'title');
+
+        $width = $params['width'] ?? 600;
+
+        $this->Table->getTotum()->addToInterfaceDatas(
+            'text',
+            ['title' => $title, 'width' => $width, 'scripts' => (array)($params['scripts'] ?? []), 'height' => $params['height'] ?? null, 'text' => $params['html'] ?? '', 'close' => !!($params['close'] ?? false)],
+            $params['refresh'] ?? false
+        );
+    }
+
+    protected function funcNormalizeN($params)
+    {
+        $params = $this->getParamsArray($params);
+
+        if (!key_exists(
+                'num',
+                $params
+            ) || !is_numeric(strval($params['num']))) {
+            throw new errorException($this->translate('Parametr [[%s]] is required and should be a number.', 'num'));
+        }
+        $tableRow = $this->__checkTableIdOrName($params['table'], 'table');
+
+        /** @var RealTables $table */
+        $table = $this->Table->getTotum()->getTable($tableRow);
+        if (!is_a(
+            $table,
+            RealTables::class
+        )) {
+            throw new errorException($this->translate('For simple and cycles tables only.'));
+        }
+        if (!$tableRow['with_order_field']) {
+            throw new errorException($this->translate('The table has no n-sorting.'));
+        }
+
+        if ($table->getNTailLength() >= (int)$params['num']) {
+            $table->normalizeN();
+        }
+    }
+
+    protected function funcProTrigramIndexAdd($params)
+    {
+        $params = $this->getParamsArray($params);
+        $tableRow = $this->__checkTableIdOrName($params['table'], 'table');
+
+        /** @var RealTables $table */
+        $table = $this->Table->getTotum()->getTable($tableRow);
+        if (!is_a(
+            $table,
+            RealTables::class
+        )) {
+            throw new errorException($this->translate('For simple and cycles tables only.'));
+        }
+
+         $table->trigramIndex(true);
+    }
+    protected function funcProTrigramIndexDelete($params)
+    {
+        $params = $this->getParamsArray($params);
+        $tableRow = $this->__checkTableIdOrName($params['table'], 'table');
+
+        /** @var RealTables $table */
+        $table = $this->Table->getTotum()->getTable($tableRow);
+        if (!is_a(
+            $table,
+            RealTables::class
+        )) {
+            throw new errorException($this->translate('For simple and cycles tables only.'));
+        }
+
+         $table->trigramIndex(false);
+    }
+
+    protected function funcLinkToTable($params)
+    {
+        $params = $this->getParamsArray($params, ['field'], ['field']);
+
+        $this->__checkNotEmptyParams($params, ['table']);
+        $tableDestRow = $this->__checkTableIdOrName($params['table'], 'table');
+
+        $link = '/Table/';
+        $q_params = [];
+
+        if ($this->Table->getTableRow()['type'] === 'cycles' && str_starts_with(
+                $this->varName,
+                'tab_'
+            ) && !empty($this->row['id']) && $tableDestRow['type'] != 'calcs') {
+            $params['cycle'] = $params['cycle'] ?? null;
+            $link .= $this->Table->getTableRow()['top'] . '/' . $this->Table->getTableRow()['id'] . '/' . ($params['cycle'] ?: $this->row['id']) . '/' . $tableDestRow['id'];
+            $linkedTable = $this->Table->getTotum()->getTable($tableDestRow);
+            $q_params['b'] = $this->varName;
+        } elseif ($tableDestRow['type'] === 'calcs') {
+            if ($topTableRow = $this->Table->getTotum()->getTableRow($tableDestRow['tree_node_id'])) {
+                if (!empty($params['cycle'])) {
+                    $this->__checkNumericParam($params['cycle'], 'cycle');
+                    $Cycle_id = $params['cycle'];
+                } elseif ($this->Table->getTableRow()['type'] === 'calcs' && (int)$tableDestRow['tree_node_id'] === $this->Table->getCycle()->getCyclesTableId()) {
+                    $Cycle_id = $this->Table->getCycle()->getId();
+                } elseif ($this->Table->getTableRow()['type'] === 'cycles' && (int)$tableDestRow['tree_node_id'] === $this->Table->getTableRow()['id'] && !empty($this->row['id'])) {
+                    $Cycle_id = $this->row['id'];
+                } else {
+                    $this->__checkNotEmptyParams($params, 'cycle');
+                }
+
+                $link .= $topTableRow['top'] . '/' . $topTableRow['id'] . '/' . $Cycle_id . '/' . $tableDestRow['id'];
+                $Cycle = $this->Table->getTotum()->getCycle($Cycle_id, $tableDestRow['tree_node_id']);
+                $linkedTable = $Cycle->getTable($tableDestRow);
+            } else {
+                throw new errorException($this->translate('The cycles table is specified incorrectly.'));
+            }
+        } else {
+            $linkedTable = $this->Table->getTotum()->getTable($tableDestRow);
+            $link .= ($tableDestRow ['top'] ?: 0) . '/' . $tableDestRow['id'];
+        }
+
+        $fields = $linkedTable->getFields();
+
+
+        if (!empty($params['filter'])) {
+            $filters = [];
+            foreach ($params['filter'] as $i => $f) {
+                if ($f['field'] === 'id' || !empty($fields[$f['field']])) {
+                    $filters[$f['field']] = $f['value'];
+                }
+            }
+            if ($filters) {
+                $cripted = Crypt::getCrypted(json_encode($filters, JSON_UNESCAPED_UNICODE));
+                $q_params['f'] = $cripted;
+                if (!empty($q_params['b'])) {
+                    $q_params['efl'] = $q_params['f'];
+                }
+            }
+        }
+
+        if (!empty($params['field'])) {
+            $field = $this->__getActionFields($params['field'], 'linkToTable');
+
+            foreach ($field as $k => $v) {
+                if (array_key_exists($k, $fields)) {
+                    $q_params['a'][$k] = $v;
+                }
+            }
+        }
+
+        if (!empty($params['hash']) && $linkedTable->getTableRow()['type'] === 'tmp') {
+            $this->__checkNotArrayParams($params, 'check');
+            $q_params['sess_hash'] = $params['hash'];
+        }
+
+        $params['target'] = $params['target'] ?? 'self';
+
+        if ($params['target'] === 'iframe' || $params['target'] === 'top-iframe') {
+            $q_params['iframe'] = true;
+        }
+
+        if ($q_params) {
+            $link .= '?' . http_build_query($q_params, '', '&', PHP_QUERY_RFC1738);
+        }
+
+        $elseData = [
+            'header' => $params['header'] ?? true,
+            'footer' => $params['footer'] ?? true,
+            'topbuttons' => $params['topbuttons'] ?? true,
+            'bottombuttons' => $params['bottombuttons'] ?? true,
+            'pointing' => $params['pointing'] ?? null,
+            'hidedots' => $this->__checkBoolOrNull($params['hidedots'] ?? null),
+        ];
+
+        if ($params['tabs'] ?? false) {
+            $elseData['tabs'] = true;
+        }
+
+        if(!empty($params['link']) && $params['link']!=='false'){
+            return $link;
+        }
+
+        $this->Table->getTotum()->addToInterfaceLink(
+            $link,
+            $params['target'] ?? 'self',
+            $params['title'] ?? $tableDestRow['title'],
+            null,
+            $params['width'] ?? null,
+            $params['refresh'] ?? false,
+            $elseData
+        );
+    }
+
+    protected function funcLinkToScript($params)
+    {
+        $params = $this->getParamsArray($params, ['post'], ['post']);
+
+        $this->__checkNotEmptyParams($params, ['uri']);
+        $this->__checkNotArrayParams($params, ['uri', 'title']);
+
+
+        $link = $params['uri'];
+        $title = $params['title'] ?? $this->translate('Calling a third-party script.');
+        if (!empty($params['post'])) {
+            $post = $this->__getActionFields($params['post'], 'linkToScript');
+        }
+
+
+        $this->Table->getTotum()->addToInterfaceLink(
+            $link,
+            $params['target'] ?? 'self',
+            $title,
+            $post ?? null,
+            $params['width'] ?? null,
+            $params['refresh'] ?? false
+        );
+    }
+
+    protected function funcInsert($params)
+    {
+        if ($params = $this->getParamsArray($params, ['field', 'exclude', 'silent'], ['field'])) {
+            $this->__processSpecialSaveTypes($params);
+
+            $addedIds = [];
+            $funcSet = function ($params) use (&$addedIds) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+
+                $fields = [];
+
+                if ($params['fields'] ?? null) {
+                    if (!is_array($params['fields']) || key_exists(0, $params['fields'])) {
+                        throw new errorException($this->translate(
+                            'The parameter [[%s]] should be of type row.',
+                            'fields'
+                        ));
+                    }
+                    $fields = $params['fields'];
+                }
+                if (key_exists('field', $params)) {
+                    foreach ($this->__getActionFields($params['field'], 'Insert') as $k => $v) {
+                        $fields[$k] = $v;
+                    }
+                }
+
+                if (!empty($params['log'])) {
+                    $table->setWithALogTrue($params['log']);
+                }
+                $fields = $this->clearNONEFields($fields);
+                $addedIds += $table->actionInsert($fields, null, $params['after'] ?? null);
+            };
+
+
+            if (!empty($params['cycle'])) {
+                $cycleIds = (array)$params['cycle'];
+                foreach ($cycleIds as $cycleId) {
+                    $params['cycle'] = $cycleId;
+                    $funcSet($params);
+                }
+            } else {
+                $funcSet($params);
+            }
+
+
+            if (!empty($params['inserts']) && !is_array($params['inserts'])) {
+                $this->vars[$params['inserts']] = $addedIds;
+            }
+        }
+    }
+
+    protected function funcinsertListExtended($params)
+    {
+        $this->funcInsertListExt($params);
+    }
+
+
+    protected function funcTableLog($params)
+    {
+        if ($params = $this->getParamsArray($params)) {
+            $table = $this->getSourceTable($params);
+
+            if (!$table) {
+                return;
+            }
+            if ($table->getTableRow()['type'] === 'tmp') {
+                throw new errorException($this->translate('Not for the temporary table.'));
+            }
+            if (empty($params['field'])) {
+                throw new errorException($this->translate('Fill in the parameter [[%s]].', 'field'));
+            }
+            if (!($field = $table->getFields()[$params['field']])) {
+                throw new errorException($this->translate(
+                    'The [[%s]] field is not found in the [[%s]] table.',
+                    [$params['field'], $table->getTableRow()['name']]
+                ));
+            }
+            if ($field['category'] === 'column') {
+                if (!is_numeric($params['id'])) {
+                    throw new errorException($this->translate('The %s parameter must be a number.', 'id'));
+                }
+
+
+                $valID = $table->getByParams(
+                    ['field' => ['id', $params['field']], 'where' => [['field' => 'id', 'operator' => '=', 'value' => $params['id']]]],
+                    'row'
+                );
+                if (!$valID) {
+                    throw new errorException($this->translate(
+                        'The row with %s was not found in table %s.',
+                        ['id ' . $params['id'], $table->getTableRow()['name']]
+                    ));
+                }
+                $val = $valID[$params['field']];
+            } else {
+                $val = $table->getByParams(['field' => [$params['field']]], 'field');
+            }
+            $this->Table->getTotum()->totumActionsLogger()->innerLog(
+                $table->getTableRow()['id'],
+                $table->getCycle() ? $table->getCycle()->getId() : null,
+                $params['id'] ?? null,
+                $params['field'],
+                $params['comment'] ?? null,
+                $val
+            );
+        }
+    }
+
+    protected function funcInsertListExt($params)
+    {
+        $params = $this->getParamsArray($params, ['field', 'exclude', 'silent'], ['field']);
+
+        $this->__processSpecialSaveTypes($params);
+
+        $MainList = [];
+        $tableRow = $this->__checkTableIdOrName($params['table'], 'table');
+
+        if ($params['fields'] ?? null) {
+            if (!is_array($params['fields'])) {
+                throw new errorException($this->translate(
+                    'The parameter [[%s]] should be of type row/list.',
+                    'fields'
+                ));
+            }
+
+            if (ctype_digit((string)array_keys($params['fields'])[0])) {
+                /*Массив из row как от функции selectRowList*/
+                foreach ($params['fields'] as $i => $row) {
+                    foreach ($row as $f => $val) {
+                        $MainList[$f][$i] = $val ?? null;
+                    }
+                }
+            } else {
+                /*row листов*/
+                $MainList = $params['fields'];
+            }
+        }
+
+        $rows = $MainList;
+        foreach (($params['field'] ?? []) as $f) {
+            $f = $this->getExecParamVal($f, 'field');
+            if ($f[array_key_first($f)] === '*NONE*') {
+                continue;
+            }
+            $rows = array_replace($rows, $f);
+        }
+
+        $listCount = 0;
+        $rowList = [];
+        foreach ($rows as $f => $list) {
+            if (is_array($rows[$f]) && key_exists(0, $rows[$f])) {
+                if (count($rows[$f]) > $listCount) {
+                    $listCount = count($rows[$f]);
+                }
+            }
+        }
+        foreach ($rows as $f => &$list) {
+            if (!is_array($rows[$f]) || !key_exists(0, $rows[$f])) {
+                $list = array_fill(0, $listCount, $list);
+            } else {
+                if (count($list) < $listCount) {
+                    $diff = $listCount - count($list);
+                    for ($i = 0; $i < $diff; $i++) {
+                        $list[] = null;
+                    }
+                }
+            }
+            $list = array_values($list);
+        }
+        unset($list);
+
+        for ($i = 0; $i < $listCount; $i++) {
+            $rowList[$i] = [];
+            foreach ($rows as $f => $list) {
+                $rowList[$i][$f] = $list[$i];
+            }
+        }
+
+        if (($rowList)) {
+            if ($tableRow['type'] !== 'calcs') {
+                unset($params['cycle']);
+            }
+
+            $addedIds = [];
+
+            $funcSet = function ($params) use ($rowList, &$addedIds) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+
+                if (!empty($params['log'])) {
+                    $table->setWithALogTrue($params['log']);
+                }
+                $addedIds = array_merge($addedIds, $table->actionInsert(null, $rowList, $params['after'] ?? null));
+            };
+
+            if (!empty($params['cycle'])) {
+                $cycleIds = (array)$params['cycle'];
+                foreach ($cycleIds as $cycleId) {
+                    $params['cycle'] = $cycleId;
+                    $funcSet($params);
+                }
+            } else {
+                $funcSet($params);
+            }
+            if (!empty($params['inserts']) && !is_array($params['inserts'])) {
+                $this->vars[$params['inserts']] = $addedIds;
+            }
+        }
+    }
+
+    protected function funcInsertList($params)
+    {
+        $this->funcInsertListExt($params);
+    }
+
+    protected function __doAction($params, $func, $isFieldSimple = false, $withSpecialSaveTypes = false)
+    {
+        $notPrepareParams = $isFieldSimple ? [] : ['field'];
+
+        if ($params = $this->getParamsArray(
+            $params,
+            ['field', 'var', 'exclude', 'silent'],
+            $notPrepareParams,
+            ['var', 'where', 'filter', 'key']
+        )) {
+            if ($withSpecialSaveTypes) {
+                $this->__processSpecialSaveTypes($params);
+            }
+
+            if (!empty($params['cycle'])) {
+                foreach ((array)$params['cycle'] as $cycle) {
+                    $tmpParams = $params;
+                    $tmpParams['cycle'] = $cycle;
+                    $func($tmpParams);
+                }
+            } else {
+                $func($params);
+            }
+        }
+    }
+
+    protected function funcSet($params)
+    {
+
+        $this->__doAction(
+            $params,
+            function ($params) {
+                if (!empty($params['hash']) && str_starts_with($params['hash'], 'i-')) {
+                    $hashData = TmpTables::init($this->Table->getTotum()->getConfig())->getByHash(
+                        TmpTables::SERVICE_TABLES['insert_row'],
+                        $this->Table->getUser(),
+                        $params['hash']
+                    );
+                    $hashData['_ihash'] = $params['hash'];
+                    if (key_exists('_hash', $hashData)) {
+                        $params['hash'] = $hashData['_hash'];
+                        unset($hashData['_hash']);
+                    }
+
+                    $table = $this->getSourceTable($params);
+
+                    if (!$table) {
+                        return;
+                    }
+                    $fields = $this->__getActionFields($params['field'], 'Set');
+                    $fields = $this->clearNONEFields($fields);
+                    $table->checkInsertRow(null, [], $hashData, $fields);
+                } else {
+                    $table = $this->getSourceTable($params);
+
+                    if (!$table) {
+                        return;
+                    }
+                    if (!empty($params['log'])) {
+                        $table->setWithALogTrue($params['log']);
+                    }
+                    $fields = $this->__getActionFields($params['field'], 'Set');
+                    $fields = $this->clearNONEFields($fields);
+                    $where = $params['where'] ?? [];
+                    $table->actionSet($fields, $where, 1);
+                }
+            },
+            withSpecialSaveTypes: true
+        );
+    }
+
+    protected function funcDelete($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+                $where = $params['where'] ?? [];
+                if (!empty($params['log'])) {
+                    $table->setWithALogTrue($params['log']);
+                }
+                if (!empty($params['force'])) {
+                    $table->setDeleteForce();
+                }
+                $table->actionDelete($where, 1);
+            },
+            withSpecialSaveTypes: true
+        );
+    }
+
+    protected function funcRestore($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+                $where = $params['where'] ?? [];
+                if (!empty($params['log'])) {
+                    $table->setWithALogTrue($params['log']);
+                }
+                $table->actionRestore($where, 1);
+            }
+        );
+    }
+
+    protected function funcDuplicate($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+                if (empty($params['field'])) {
+                    $fields = [];
+                } else {
+                    $fields = $this->__getActionFields($params['field'], 'Duplicate');
+                }
+
+                if (!empty($params['log'])) {
+                    $table->setWithALogTrue($params['log']);
+                }
+
+                $where = $params['where'] ?? [];
+                $addedIds = $table->actionDuplicate($fields, $where, 1, $params['after'] ?? null);
+                if (!empty($params['inserts']) && !is_array($params['inserts'])) {
+                    $this->vars[$params['inserts']] = $addedIds;
+                }
+            }
+        );
+    }
+
+    protected function funcDuplicateList($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+                $fields = $this->__getActionFields($params['field'], 'DuplicateList');
+
+                if (!empty($params['log'])) {
+                    $table->setWithALogTrue($params['log']);
+                }
+
+                $where = $params['where'] ?? [];
+                $addedIds = $table->actionDuplicate($fields, $where, null, $params['after'] ?? null);
+                if (!empty($params['inserts']) && !is_array($params['inserts'])) {
+                    $this->vars[$params['inserts']] = $addedIds;
+                }
+            }
+        );
+    }
+
+    protected function funcDeleteList($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+                $where = $params['where'] ?? [];
+                if (!empty($params['log'])) {
+                    $table->setWithALogTrue($params['log']);
+                }
+                if (!empty($params['force'])) {
+                    $table->setDeleteForce();
+                }
+                $table->actionDelete($where, null);
+            },
+            withSpecialSaveTypes: true
+        );
+    }
+
+    protected function funcRestoreList($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+                $where = $params['where'] ?? [];
+                if (!empty($params['log'])) {
+                    $table->setWithALogTrue($params['log']);
+                }
+                $table->actionRestore($where, null);
+            }
+        );
+    }
+
+    protected function funcClear($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+
+                $where = $params['where'] ?? [];
+
+                if (!empty($params['log'])) {
+                    $table->setWithALogTrue($params['log']);
+                }
+
+                $table->actionClear($params['field'], $where, 1);
+            },
+            true
+        );
+    }
+
+    protected function funcPin($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+                if (!empty($params['log'])) {
+                    $table->setWithALogTrue($params['log']);
+                }
+                $where = $params['where'] ?? [];
+                $table->actionPin($params['field'], $where, 1);
+            },
+            true
+        );
+    }
+
+    protected function funcPinList($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+                if (!empty($params['log'])) {
+                    $table->setWithALogTrue($params['log']);
+                }
+                $where = $params['where'] ?? [];
+
+                $table->actionPin($params['field'], $where, null);
+            },
+            true
+        );
+    }
+
+    protected function funcSetList($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+                $fields = $this->__getActionFields($params['field'], 'SetList');
+                $fields = $this->clearNONEFields($fields);
+                if (!empty($params['log'])) {
+                    $table->setWithALogTrue($params['log']);
+                }
+                $where = $params['where'] ?? [];
+
+                $table->actionSet($fields, $where, null);
+            },
+            withSpecialSaveTypes: true
+        );
+    }
+
+    protected function __execButtonList($params)
+    {
+        $table = $this->getSourceTable($params);
+
+        if (!$table) {
+            return;
+        }
+
+        $params['var'] = $params['var'] ?? [];
+        $this->__checkListParam($params['var'], 'var');
+        $vars = [];
+        if ($params['var']) {
+            foreach ($params['var'] as $_v) {
+                $vars[$_v['field']] = $_v['value'];
+            }
+        }
+
+
+        $params['field'] = $params['field'][0] ?? null;
+        if (!$params['field']) {
+            throw new errorException($this->translate('Fill in the parameter [[%s]].', 'field'));
+        }
+        if (!key_exists(
+            $params['field'],
+            $table->getFields()
+        )) {
+            throw new errorException($this->translate(
+                'The [[%s]] field is not found in the [[%s]] table.',
+                [$params['field'], $table->getTableRow()['name']]
+            ));
+        }
+
+        $field = $table->getFields()[$params['field']];
+
+        $CA = new CalculateAction($field['codeAction']);
+        if ($field['category'] === 'column') {
+            $params['field'] = ['__all__'];
+            $rows = $table->getByParams($params, 'rows');
+            foreach ($rows as $row) {
+                if (is_a($table, RealTables::class)) {
+                    $row = RealTables::decodeRow($row);
+                }
+
+                $CA->execAction(
+                    $field['name'],
+                    $row,
+                    $row,
+                    $table->getTbl(),
+                    $table->getTbl(),
+                    $table,
+                    'exec',
+                    var: $vars
+                );
+            }
+        } else {
+            $CA->execAction(
+                $field['name'],
+                $table->getTbl()['params'],
+                $table->getTbl()['params'],
+                $table->getTbl(),
+                $table->getTbl(),
+                $table,
+                'exec',
+                var: $vars
+            );
+        }
+    }
+
+    protected function funcExecButtonList($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $this->__execButtonList($params);
+            },
+            true
+        );
+    }
+
+    protected function funcExecButton($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $params['limit'] = 1;
+                $this->__execButtonList($params);
+            },
+            true
+        );
+    }
+
+    protected function funcSetListExtended($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+                $fields = $this->__getActionFields($params['field'], 'SetListExtended');
+                $fields = $this->clearNONEFields($fields);
+
+                $where = $params['where'] ?? [];
+                $modify = $table->getModifyForActionSetExtended($fields, $where);
+
+                if ($modify) {
+                    if (!empty($params['log'])) {
+                        $table->setWithALogTrue($params['log']);
+                    }
+
+                    $table->reCalculateFromOvers(
+                        [
+                            'modify' => $modify
+                        ]
+                    );
+                }
+            },
+            withSpecialSaveTypes: true
+        );
+    }
+
+    protected function funcTableMassChanges($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+                if (empty($params['data'])) {
+                    return;
+                }
+                $this->__checkListParam($params['data'], 'data');
+
+                $remove = [];
+                $add = [];
+                $modify = [];
+
+                foreach ($params['data'] as $row) {
+                    if (!empty($row['id'])) {
+                        $id = $row['id'];
+                        if (is_array($row['id']) || !ctype_digit((string)$row['id'])) {
+                            throw new errorException($this->translate('The %s field must be numeric.', 'id'));
+                        }
+                        if (!empty($row['__delete'])) {
+                            $remove[] = $id;
+                        } else {
+                            unset($row['id']);
+                            $modify[$id] = $row;
+                        }
+                    } else {
+                        $add[] = $row;
+                    }
+                }
+
+                if ($remove || $add || $modify) {
+                    if (!empty($params['log'])) {
+                        $table->setWithALogTrue($params['log']);
+                    }
+
+                    $table->reCalculateFromOvers(
+                        [
+                            'modify' => $modify,
+                            'remove' => $remove,
+                            'add' => $add,
+                            'channel' => match ($params['channel']) {
+                                'web', 'xml' => $params['channel'],
+                                default => 'inner'
+                            }
+                        ]
+                    );
+                }
+            }
+        );
+    }
+
+
+    protected function funcClearList($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+                $where = $params['where'] ?? [];
+                if (!empty($params['log'])) {
+                    $table->setWithALogTrue($params['log']);
+                }
+                $table->actionClear($params['field'], $where, null);
+            },
+            true
+        );
+    }
+
+    protected function funcReorder($params)
+    {
+        $this->__doAction(
+            $params,
+            function ($params) {
+                $this->__checkRequiredParams($params, ['ids'], 'reorder');
+                $table = $this->getSourceTable($params);
+
+                if (!$table) {
+                    return;
+                }
+                $after = ($params['after'] ?? null);
+                if(!is_null($after)){
+                    $after = (int)$after;
+                }
+                $table->actionReorder($params['ids'], $after);
+            },
+            true
+        );
+    }
+
+    protected function funcProImapGetUidList($params)
+    {
+        $params = $this->getParamsArray($params, [], []);
+
+        if (!key_exists('uidvalidity', $params)) {
+            throw new errorException($this->translate(
+                'Fill in the parameter [[%s]].',
+                ['uidvalidity']
+            ));
+        }
+
+        $this->__checkNotEmptyParams($params, ['name', 'folder']);
+        $this->__checkNotArrayParams($params, ['name', 'folder', 'uidvalidity', 'datefrom', 'lastuid', 'timeout']);
+
+        $query = new ImapQueryBuilder();
+        if (!empty($params['datefrom'])) {
+            if (($Datefrom = DateTime::createFromFormat('Y-m-d', $params['datefrom'])) &&
+                $Datefrom->format('Y-m-d') === $params['datefrom']) {
+                $query->since($Datefrom);
+            } else {
+                throw new errorException($this->translate('Invalid date format. Use YYYY-MM-DD.'));
+            }
+        } else {
+            $query->all();
+        }
+
+        [$uidvalidity, $uids] = $this->__withImap($params['name'], function (Mailbox $mailbox) use ($params, $query) {
+            $folder = new Folder($mailbox, $this->__imapFolderPath($params['folder']));
+            $uidvalidity = $folder->status()['UIDVALIDITY'] ?? null;
+            $folder->select(true);
+            $response = $mailbox->connection()->search([$query->toImap()]);
+
+            return [
+                $uidvalidity === null ? null : (int)$uidvalidity,
+                array_map(fn(Token $token) => (int)$token->value, $response->tokensAfter(2))
+            ];
+        });
+
+        $lastuid = (int)($params['lastuid'] ?? 0);
+
+        if ($uidvalidity != $params['uidvalidity']) {
+            $lastuid = 0;
+        }
+
+        if ($lastuid) {
+            $uids = array_filter($uids, fn($uid) => $uid > $lastuid);
+            sort($uids, SORT_NUMERIC);
+        }
+
+        return [
+            'uids' => array_values($uids),
+            'uidvalidity' => $uidvalidity == $params['uidvalidity'] ? null : $uidvalidity
+        ];
+    }
+
+
+    protected function funcProImapGetFolders($params)
+    {
+        $params = $this->getParamsArray($params);
+        $this->__checkNotEmptyParams($params, ['name']);
+
+        return $this->__withImap($params['name'], fn(Mailbox $mailbox) => array_map(
+            fn(Folder $folder) => ImapStr::fromImapUtf7($folder->path()),
+            $mailbox->folders()->get()->all()
+        ));
+    }
+
+    protected function funcProImapGetEmail($params)
+    {
+        $params = $this->getParamsArray($params, [], []);
+        $this->__checkNotEmptyParams($params, ['name', 'folder', 'uid']);
+
+        return $this->__withImap($params['name'], function (Mailbox $mailbox) use ($params) {
+            $message = (new Folder($mailbox, $this->__imapFolderPath($params['folder'])))->messages()
+                ->withHeaders()
+                ->withBody()
+                ->markAsRead()
+                ->find((int)$params['uid']);
+
+            if (!$message) {
+                throw new errorException($this->translate('UID %s not found', [$params['uid']]));
+            }
+
+            $headers = [];
+            $current = '';
+            foreach (explode("\r\n", $message->head()) as $line) {
+                if (preg_match('/^([A-Za-z-]+):\s*(.*)$/', $line, $m)) {
+                    $current = $m[1];
+                    $headers[$current] = $m[2];
+                } elseif (preg_match('/^\s+(.+)$/', $line, $m) && $current) {
+                    $headers[$current] .= ' ' . $m[1];
+                }
+            }
+
+            $files = [];
+            foreach ($message->attachments() as $attachment) {
+                $files[] = [
+                    'name' => $attachment->filename() ?: 'attachment_' . bin2hex(random_bytes(3)),
+                    'base64' => base64_encode($attachment->contents())
+                ];
+            }
+
+            $messageId = $message->messageId();
+            $date = $message->date();
+
+            return [
+                'message_id' => $messageId ? '<' . $messageId . '>' : '',
+                'email_to' => implode(', ', array_map(fn(Address $address) => $address->email(), $message->to())),
+                'email_from' => $message->from()?->email() ?? '',
+                'email_cc' => implode(', ', array_map(fn(Address $address) => $address->email(), $message->cc())),
+                'email_date' => $date ? date('c', $date->getTimestamp()) : '',
+                'email_subject' => $message->subject() ?? '',
+                'email_body' => $message->text() ?: ($message->html() ?? ''),
+                'email_files' => $files,
+                'email_headers' => $headers
+            ];
+        });
+    }
+
+    protected function funcProIndexAdd($params)
+    {
+        $params = $this->getParamsArray($params, [], []);
+        $this->__checkNotEmptyParams($params, ['name', 'table', 'type', 'field']);
+
+        if(!preg_match('/^[a-zA-Z0-9_]{3,10}$/', $params['name'])){
+            throw new errorException($this->translate('Wrong [[%s]] value', 'name format'));
+        }
+
+        if(!preg_match('/^[a-z][a-z0-9_]{2,30}$/', $params['table'])){
+            throw new errorException($this->translate('Wrong [[%s]] value', 'table format'));
+        }
+
+        $fields = [];
+        foreach ((array)$params['field'] as $n=>$field){
+            if(!is_string($field) || !preg_match('/^[a-z][a-z0-9_]{2,50}$/', $field)){
+                throw new errorException($this->translate('Wrong [[%s]] value', 'field '.$field));
+            }
+            $fields[] = $field;
+        }
+
+
+
+        if ($params['type']==='GIN'){
+            $name="pro__{$params['table']}_gin_{$params['name']}";
+
+            $field = $fields[0];
+            $this->Table->getTotum()->getConfig()->getSql()->exec("CREATE INDEX IF NOT EXISTS $name ON {$params['table']} USING GIN (($field -> 'v') jsonb_path_ops)");
+
+        }else{
+            $name="pro__{$params['table']}_btree_{$params['name']}";
+
+            $_fields='((';
+            foreach ($fields as $n=>$field){
+                if($n!=0){
+                    $_fields.='->>\'v\'),(';
+                }
+                $_fields.=$field;
+            }
+            $_fields.='->>\'v\'))';
+
+            $this->Table->getTotum()->getConfig()->getSql()->exec("CREATE INDEX IF NOT EXISTS $name ON {$params['table']} {$_fields}");
+        }
+    }
+
+    protected function funcProIndexDelete($params)
+    {
+        $params = $this->getParamsArray($params, [], []);
+        $this->__checkNotEmptyParams($params, ['name']);
+
+        if(!preg_match('/^[a-zA-Z0-9_]{3,10}$/', $params['name'])){
+            throw new errorException($this->translate('Wrong [[%s]] value', 'name format'));
+        }
+
+        $data = $this->Table->getTotum()->getTable('ttm__custom_indexes')->getByParams((new FormatParamsForSelectFromTable())->where('name', $params['name'])->field('index_table')->field('index_type')->params(), 'row');
+
+        if(empty($data)){
+            throw new errorException($this->translate('Index not found'));
+        }
+
+        $type = match ($data['index_type'] ?? '') {
+            'GIN' => 'gin',
+            default => 'btree'
+        };
+
+        $name = "pro__{$data['index_table']}_{$type}_{$params['name']}";
+        $this->Table->getTotum()->getConfig()->getSql()->exec("DROP INDEX IF EXISTS $name");
+
+    }
+
+    protected function getActionTable(array $tableRow, array $params): aTable
+    {
+        switch ($tableRow['type']) {
+            case 'calcs':
+                if ($topTableRow = $this->Table->getTotum()->getTableRow($tableRow['tree_node_id'])) {
+                    if ($this->Table->getTableRow()['type'] === 'calcs' && (int)$tableRow['tree_node_id'] === $this->Table->getCycle()->getCyclesTableId() && empty($params['cycle'])) {
+                        $Cycle_id = $this->Table->getCycle()->getId();
+                    } elseif ($this->Table->getTableRow()['type'] === 'cycles' && (int)$tableRow['tree_node_id'] === $this->Table->getTableRow()['id'] && !empty($this->row['id'])) {
+                        $Cycle_id = $this->row['id'];
+                    } else {
+                        $this->__checkNumericParam($params['cycle'], 'cycle');
+                        $Cycle_id = $params['cycle'];
+                    }
+                    $Cycle = $this->Table->getTotum()->getCycle($Cycle_id, $tableRow['tree_node_id']);
+                    $linkedTable = $Cycle->getTable($tableRow);
+                } else {
+                    throw new errorException($this->translate('The cycles table is specified incorrectly.'));
+                }
+                return $linkedTable;
+            case 'tmp':
+                $this->__checkNotEmptyParams($params, 'hash');
+                $this->__checkNotArrayParams($params, 'hash');
+                return $this->Table->getTotum()->getTable($tableRow, $params['hash']);
+            default:
+                return $this->Table->getTotum()->getTable($tableRow);
+        }
+    }
+
+    protected function __processSpecialSaveTypes(array $params)
+    {
+        foreach ($params['exclude'] ?? [] as $exclude) {
+            foreach ((array)$exclude as $_tableName) {
+                if (!preg_match('/^[a-z][a-z0-9_]{2,30}$/', $_tableName)) {
+                    throw new errorException($this->translate('[[%s]] format error: [[%s]].', 'exclude'));
+                }
+                $this->Table->getTotum()->addTableSpecialSaveType($_tableName, 'exclude');
+            }
+        }
+        foreach ($params['silent'] ?? [] as $exclude) {
+            foreach ((array)$exclude as $_tableName) {
+                if (!preg_match('/^[a-z][a-z0-9_]{2,30}$/', $_tableName)) {
+                    throw new errorException($this->translate('[[%s]] format error: [[%s]].', 'silent'));
+                }
+
+                $this->Table->getTotum()->addTableSpecialSaveType($_tableName, 'silent');
+            }
+        }
+    }
+
+
+    protected function __imapFolderPath(string $folder): string
+    {
+        if (ImapStr::toImapUtf7(ImapStr::fromImapUtf7($folder)) === $folder) {
+            return $folder;
+        }
+        return ImapStr::toImapUtf7($folder);
+    }
+
+    protected function __withImap(string $name, callable $callback): mixed
+    {
+        $mailbox = $this->__getImapMailbox($name);
+        try {
+            return $callback($mailbox);
+        } catch (ImapException $e) {
+            throw new errorException('IMAP: ' . $e->getMessage());
+        } finally {
+            $mailbox->disconnect();
+        }
+    }
+
+    protected function __getImapMailbox(string $name): Mailbox
+    {
+        $Totum = $this->Table->getTotum();
+
+        $imap_settings = $Totum->getTable('ttm__imap_settings')->getByParams(
+            (new FormatParamsForSelectFromTable())
+                ->where('name', $name)
+                ->field('*ALL*')->params(),
+            'row'
+        );
+        if (empty($imap_settings)) {
+            throw new criticalErrorException($this->translate('IMAP data by name [[%s]] is not found', $name));
+        }
+
+        $protocol = strtolower((string)($imap_settings['protocol'] ?? ''));
+        if ($protocol !== '' && !str_starts_with($protocol, 'imap')) {
+            throw new criticalErrorException($this->translate('Protocol %s is not supported. Use IMAP.', $protocol));
+        }
+
+        $flags = array_map('strtolower', is_array($imap_settings['flags'] ?? null) ? $imap_settings['flags'] : []);
+        $port = (int)$imap_settings['port'];
+
+        $mailbox = new Mailbox([
+            'host' => $imap_settings['server'],
+            'port' => $port,
+            'username' => $imap_settings['email'],
+            'password' => Crypt::getDeCrypted($imap_settings['password'], $Totum->getConfig()->getCryptKeyFileContent()),
+            'encryption' => match (true) {
+                in_array('ssl', $flags) => 'ssl',
+                in_array('tls', $flags) => 'starttls',
+                in_array('notls', $flags) => 'tcp',
+                $port === 993 => 'ssl',
+                default => 'starttls',
+            },
+            'validate_cert' => !in_array('novalidate-cert', $flags),
+        ]);
+
+        try {
+            $mailbox->connect();
+        } catch (ImapException $e) {
+            throw new criticalErrorException($this->translate('Imap is not connected: %s', $e->getMessage()));
+        }
+
+        return $mailbox;
+    }
+}

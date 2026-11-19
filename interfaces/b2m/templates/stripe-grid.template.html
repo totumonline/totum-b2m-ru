@@ -1,0 +1,77 @@
+<!--##########
+main
+##########-->
+
+<section class="stripe-grid additional_classes_list">
+  {__title_block}
+  <div class="stripe-grid--block">
+    {__list_gallery_article}
+  </div>
+</section>
+
+<!--##########
+__title_block
+##########-->
+
+<div class="stripe-grid--title--block">
+  <h2>{gallery_title}</h2>
+  {__title_block_link}
+</div>
+
+<!--##########
+__title_block_link
+##########-->
+
+<a href="{gallery_link}">/ {gallery_link_title}</a>
+
+<!--##########
+__list_gallery_article
+##########-->
+
+<article class="stripe-grid--item">
+  <a href="{gellery_scroll_main_link}">
+    <div class="stripe-grid--item--info-buttons--block">
+      <div class="stripe-grid--item--info--block">
+        {__gallery_subtitle}
+        <h3>{gallery_scroll_title}</h3>
+        {__gallery_scroll_text}
+      </div>
+      {__gallery_additional_links}
+    </div>
+    <div class="stripe-grid--item--image">
+      <img lazy-src="{gallery_scroll_image}" alt="{gallery_scroll_title}">
+    </div>
+  </a>
+</article>
+
+<!--##########
+__gallery_subtitle
+##########-->
+
+<div class="stripe-grid--item--info--category">{gallery_scroll_subtitle}</div>
+
+<!--##########
+__gallery_scroll_text
+##########-->
+
+<div class="stripe-grid--item--info--description">
+  <div class="elements-medium-text">
+    {gallery_scroll_text}
+  </div>
+</div>
+
+<!--##########
+__gallery_additional_links
+##########-->
+
+<div class="stripe-grid--item--buttons">
+  <ul>
+    {__list_additional_link_li}
+  </ul>
+</div>
+
+<!--##########
+__list_additional_link_li
+##########-->
+
+<li><button class="---stripe-grid-button outline-button" data-link="{additional_link}">{additional_link_title}</button></li>

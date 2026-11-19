@@ -1,0 +1,186 @@
+<!--##########
+main
+##########-->
+
+<div class="cart--block">
+  <div class="cart--header">
+    <div class="cart--header--title">
+      <span class="cart--header--title--label">Корзина</span>
+      <span class="cart--header--title--count"></span>
+      <a href="" class="cart--header--title--delete-all"><i class="fa-solid fa-trash-can"></i></a>
+    </div>
+    <button class="cart--header--close" type="button" aria-label="Закрыть корзину"></button>
+  </div>
+
+  <button class="cart--add-from-history link-button __hidden" type="button">Добавить товары из истории браузера</button>
+
+  <div class="cart--items">
+    {__list_cart_items}
+  </div>
+
+  <div class="cart--zero">
+    <div class="cart--zero--text">Вы еще не добавили в корзину ни одного товара <i class="fa-solid fa-barcode"></i> — это легко исправить!</div>
+    <button class="cart--zero--catalog outline-button" type="button" data-link="/catalog">Каталог</button>
+  </div>
+
+  {__promo_codes}
+
+  <div class="cart--delivery">
+    <div class="cart--delivery--title">Доставка</div>
+    <div class="cart--delivery--city" data-city-id="">
+      <div class="cart--delivery--city--selected--block">
+        <div class="cart--delivery--city--selected"></div>
+        <div class="cart--delivery--city--region"></div>
+      </div>
+      <button class="cart--delivery--select-city" aria-label="Выбрать город доставки"><i class="fa-solid fa-arrow-right-to-city"></i></button>
+    </div>
+    <button class="cart--delivery--get-delivery link-button" type="button">Рассчитать доставку</button>
+    <div class="cart--delivery--loading">Обновляю данные по доставкам</div>
+    <div class="cart--delivery--free" data-multiple-limit="{data_multiple_limit}">
+      <div class="cart--delivery--free--progress-bar" style="--progress: 0"></div>
+      <div class="cart--delivery--free--text">
+        Мы предоставляем скидки на доставку в зависимости от суммы товаров в корзине. До дополнительной скидки на доставку осталось добавить товаров на <span class="cart--delivery--free--text--sum"></span>
+      </div>
+    </div>
+    <div class="cart--delivery--results">
+      <ul>
+
+      </ul>
+    </div>
+  </div>
+
+
+  <div class="summary">
+    <div class="summary--title">Cумма заказа</div>
+    <div class="summary--on-request-info">{on_request_cart_text}</div>
+    <div class="summary--cart-rows">
+      <ul>
+        <li id="summary-products" class="__active">
+          <div class="summary--row--label">Стоимость продуктов</div>
+          <div class="summary--row--dots"></div>
+          <div class="summary--row--value"></div>
+        </li>
+        <li id="summary-all-discount">
+          <div class="summary--row--label">Скидка на товары</div>
+          <div class="summary--row--dots"></div>
+          <div class="summary--row--value"></div>
+        </li>
+        <li id="summary-delivery">
+          <div class="summary--row--label">Доставка</div>
+          <div class="summary--row--dots"></div>
+          <div class="summary--row--value"></div>
+        </li>
+      </ul>
+    </div>
+    <div class="summary--points __hidden"></div>
+    <div class="summary--total">
+      <div class="summary--total--label">итого</div>
+      <div class="summary--total--value"></div>
+    </div>
+  </div>
+
+  <button class="summary--checkout main-button" type="button" data-on-request-checkout="{data_on_request_checkout}">Перейти к оформлению</button>
+  <button class="summary--return outline-button" type="button">Вернутся к покупкам</button>
+
+</div>
+
+<!--##########
+__list_cart_items
+##########-->
+
+
+<article class="---cart-item {not_available}" data-price="{calculated_price}" data-full-price="{old_price}" data-item-id="{sku_id}" data-points="{item_points}" data-max-limit="{max_avaliable}" data-sha="{data_sha}" data-multiplicity="{data_multiplicity}" data-minimum-order="{data_minimum_order}" data-on-request="{data_on_request}" data-recalc-levels="{data_recalc_levels}">
+  <div class="---cart-item--image-info--block">
+    <div class="---cart-item--image">
+      <img src="{product_image}" alt="{product_alt}">
+      <div class="---cart-item--promo {promo_item_active} {zero_d}">промо</div>
+    </div>
+    <a href="{item_link}">
+      <div class="---cart-item--info">
+        <div class="---cart-item--info--one-word">{one_word}</div>
+        <div class="---cart-item--info--name">{product_name}</div>
+        <div class="---cart-item--info--sku">{product_sku}</div>
+        <div class="---cart-item--info--option">
+          <ul>
+            {__list_product_options}
+          </ul>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="---cart-item--price--block">
+    <div class="---cart-item--price--quantity-old--block">
+      <div class="---cart-item--price--quantity--block">
+        <button class="---quantity--decrease" type="button" aria-label="Уменьшить количество товара"></button>
+        <div class="---quantity--amount {allow_input}">{quantity}</div>
+        <button class="---quantity--increase" type="button" aria-label="Увеличить количество товара"></button>
+        <button class="---quantity--remove" type="button" aria-label="Удалить товар из корзины"></button>
+      </div>
+    </div>
+    <div class="---cart-item--price-points--block">
+      <div class="---cart-item--price-points--values--block">
+        <div class="---cart-item--price"></div>
+        <div class="---cart-item--points"></div>
+      </div>
+      <button class="---cart-item--buy-button outline-button" type="button">{buy_button_text}</button>
+    </div>
+  </div>
+   
+</article>
+
+<!--##########
+__list_product_options
+##########-->
+
+<li><div class="---cart-item--info--option--title" data-option-values="{data_option_values}">{option_title}</div><div>{option_value}</div></li>
+
+<!--##########
+__promo_codes
+##########-->
+
+<div class="cart--promo--block">
+  <div class="cart--promo">
+    <input class="cart--promo--input" type="text" placeholder="ВВЕДИТЕ ПРОМОКОД">
+    <button class="cart--promo--submit __disabled" type="button" aria-label="Применить промокод"></button>
+  </div>
+  <div class="cart--promo-result" data-scope="{data_scope}" data-sum-dependency="{data_sum_dependency}">
+    <div class="cart--promo-result--text">
+      <div class="cart--promo-result--text--title">Применен промокод:</div>
+      <div class="cart--promo-result--text--accent"></div>
+    </div>
+    <button class="cart--promo-result--cancel" type="button" aria-label="Отменить применённый промокод"></button>
+  </div>
+  <div class="cart--promo-alert"><i class="fa-solid fa-head-side-cough"></i><div>{promocode_error_text}</div></div>
+</div>
+
+<div class="cart--promo-banners">
+  {__list_promo_banners}
+</div>
+
+<!--##########
+__list_delivery_options
+##########-->
+
+<li data-delivery-id="{data_delivery_id}">
+  <div class="cart--delivery--results--name-comment--block">
+    <div class="cart--delivery--results--name">{shipping_method_name}</div>
+    <div class="cart--delivery--results--comment">{shipping_method_comment}</div>
+  </div>
+  <div class="cart--delivery--results--block">
+    <div class="cart--delivery--results--price {free_class} {null_price_class}">{shipping_method_price}</div>
+    <div class="cart--delivery--results--time-date--block {aprox_time_hidden}">
+      <div class="cart--delivery--results--time">{shipping_method_time_days}</div>
+      <div class="cart--delivery--results--date">{shipping_method_aprox_date}</div>
+    </div>
+  </div>
+</li>
+
+<!--##########
+__list_promo_banners
+##########-->
+
+<article class="---cart-promo-banner" data-key-word="{data_key_word}">
+  <div class="---cart-promo-banner--title">{promo_title}</div>
+  <div class="---cart-promo-banner--key-word">По промокоду: {data_key_word}</div>
+  <div class="---cart-promo-banner--description">{promo_description}</div>
+</article>

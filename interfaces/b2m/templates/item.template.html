@@ -1,0 +1,173 @@
+<!--##########
+main
+##########-->
+
+<article id="{item_id}" class="item {class_sku_show}" data-product-id="{product_id}" data-page="{data_page}" {data_catalog_path} data-has-sku="{data_has_sku}" data-sku="{data_sku}" data-options-inside="{data_options_inside}" data-multiplicity="{data_multiplicity}" data-minimum-order="{data_minimum_order}">
+  <div class="item--image-block">
+    <div class="item--image">
+      <div class="item--scroller">
+        <ul>
+          {__list_product_images}
+        </ul>
+      </div>
+      <div class="item--scroller--dots"></div>
+    </div>
+    <button class="item--like-button" aria-label="Избранное"></button>
+    <button class="item--buy-button {order_button}" aria-label="Купить товар"></button>
+    {__item_available}
+    <div class="item--markers __markers">
+      {__item_hit}
+      {__item_new}
+      {__item_custom_marker}
+      {__item_discount}
+    </div>
+  </div>
+  <a href="{product_url}">
+    <div class="item--item--block">
+      {__sku_show}
+      {__product_options}
+      {__review_score}
+      <div class="item--one-word">{one_word}</div>
+      {__product_features}
+      <div class="item--name--block">
+        <div class="item--name" lang="ru">{product_title}</div>
+        <div class="item--points--block">
+          <div class="item--price--block">
+            <div class="item--price {price_from}">{product_price}</div>
+            <div class="item--old-price {old_price_hidden}">{old_price}</div>
+          </div>
+          <div class="item--points {points_hidden}">{points}</div>
+        </div>
+      </div>
+    </div>
+  </a>
+  {__item_custom}
+</article>
+
+<!--##########
+__list_product_images
+##########-->
+
+<li>
+  <img lazy-src="{product_image_url}" alt="{product_title}" class="{cover}" {data_sku_id}>
+</li>
+
+<!--##########
+__item_available
+##########-->
+
+<!-- шаблон блока находится в коде b2mCatalogItems -->
+
+<!--##########
+__item_hit
+##########-->
+
+<span class="__item-hit"></span>
+
+<!--##########
+__item_new
+##########-->
+
+<span class="__item-new"></span>
+
+<!--##########
+__item_custom_marker
+##########-->
+
+<span class="__item-{custom_marker_class}">{custom_marker_text}</span>
+
+<!--##########
+__item_discount
+##########-->
+
+
+
+<!--##########
+__product_options
+##########-->
+
+<div class="item--options">
+  {__list_product_options}
+</div>
+
+<!--##########
+__list_product_options
+##########-->
+
+<!-- формируются из __product_option_image и __product_option_text -->
+
+<!--##########
+__product_option_image
+##########-->
+
+<div class="item--options--colors">
+  <ul {more}>
+    {__list_options_images}
+  </ul>
+</div>
+
+<!--##########
+__list_options_images
+##########-->
+
+<!--<li style="{option_image} {option_margin}"></li>-->
+
+<!--##########
+__product_option_text
+##########-->
+
+<div class="item--options--option">
+  <ul {more}>
+    {__list_options_text}
+  </ul>
+</div>
+
+<!--##########
+__list_options_text
+##########-->
+
+<li style="--item-option:'{option_text_value}';"></li>
+
+<!--##########
+__sku_show
+##########-->
+
+<div class="item--sku-show">
+  <ul {sku_more}>
+    {__list_sku_show}
+  </ul>
+</div>
+
+<!--##########
+__list_sku_show
+##########-->
+
+<li {sku_active} data-sku-id="{sku_id}" data-sku-title="{sku_title}" data-sku-price="{sku_price}" data-sku-old-price="{sku_old_price}" data-sku-discount="{sku_discount}" data-sku-points="{sku_points}" data-sku-custom="{data_sku_custom}"><img src="{sku_show_img}" alt="{sku_title}"></li>
+
+<!--##########
+__review_score
+##########-->
+
+<div class="item--review-score __star-{score_class_number}">{score}</div>
+
+<!--##########
+__product_features
+##########-->
+
+<div class="item--features">
+  <ul>
+    {__list_product_features}
+  </ul>
+</div>
+
+<!--##########
+__list_product_features
+##########-->
+
+<li><span class="item--features--title">{feture_title}</span><span>{feature_value}</span></li>
+
+<!--##########
+__item_custom
+##########-->
+
+<!-- шаблон блока находится в коде b2mCatalogItems -->

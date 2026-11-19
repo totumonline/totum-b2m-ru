@@ -1,0 +1,63 @@
+<div class="mobile-right-panel--header">
+  <button class="mobile-right-panel--header--title" type="button" aria-label="Закрыть: Адрес">Адрес</button>
+  <button class="mobile-right-panel--delete" type="button" aria-label="Удалить адрес"></button>
+  <button class="mobile-right-panel--close" type="button" aria-label="Закрыть"></button>
+</div>
+
+<div class="mobile-right-panel--content">
+  <div class="mobile-right-panel--city" data-city-id="">
+    <div class="mobile-right-panel--city--selected--block">
+      <div class="mobile-right-panel--city--selected">Выберите город</div>
+      <div class="mobile-right-panel--city--region"></div>
+    </div>
+    <button class="mobile-right-panel--select-city" type="button" aria-label="Выбрать город"><i class="fa-solid fa-arrow-right-to-city"></i></button>
+  </div>
+
+  <div class="mobile-right-panel--input--block">
+    <div class="mobile-right-panel--input--title">Улица и номер дома</div>
+    <div class="mobile-right-panel--input __required">
+      <i class="fa-solid fa-asterisk"></i>
+      <input type="text" id="address-street-and-building-number" placeholder="Укажите улицу и номер дома" autocomplete="street-address" maxlength="300">
+    </div>
+  </div>
+
+  <div class="mobile-right-panel--input--block">
+    <div class="mobile-right-panel--input--title">Квартира или офис</div>
+    <div class="mobile-right-panel--input">
+      <input type="text" id="address-apartment-office" placeholder="Номер квартиры или офиса" maxlength="300">
+    </div>
+  </div>
+
+  <div class="mobile-right-panel--input--block">
+    <div class="mobile-right-panel--input--title">Подъезд</div>
+    <div class="mobile-right-panel--input">
+      <input type="text" id="address-entrance" placeholder="Номер подъезда" maxlength="300">
+    </div>
+  </div>
+
+  <div class="mobile-right-panel--input--block">
+    <div class="mobile-right-panel--input--title">Домофон</div>
+    <div class="mobile-right-panel--input">
+      <input type="text" id="address-intercom" placeholder="Код домофона" maxlength="300">
+    </div>
+  </div>
+
+  <div class="mobile-right-panel--input--block">
+    <div class="mobile-right-panel--input--title">Этаж</div>
+    <div class="mobile-right-panel--input">
+      <input type="text" id="address-floor" placeholder="Номер этажа" maxlength="300">
+    </div>
+  </div>
+
+  <div class="mobile-right-panel--input--block">
+    <div class="mobile-right-panel--input--title">Комментарий</div>
+    <div class="mobile-right-panel--input">
+      <textarea id="address-comment" rows="5" placeholder="Что важно знать курьеру" maxlength="300"></textarea>
+    </div>
+  </div>
+</div>
+
+<div class="mobile-right-panel--accept-cansel--block">
+  <button class="mobile-right-panel--cansel" type="button" aria-label="Отменить">Отменить</button>
+  <button class="mobile-right-panel--accept" type="button" aria-label="Применить">Применить</button>
+</div>

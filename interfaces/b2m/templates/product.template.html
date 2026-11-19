@@ -1,0 +1,580 @@
+<!--##########
+main
+##########-->
+
+<main class="product" data-product-id="{data_product_id}" data-sku-images="{data_sku_images}" data-sku-id="{data_sku_id}" data-multiplicity="{data_multiplicity}" data-minimum-order="{data_minimum_order}" itemscope itemtype="https://schema.org/Product">
+  <section class="product--main-item">
+    <div class="container">
+      <div class="product--main-item--image-params-buy--block">
+        <div class="---large-image">
+          <div class="---large-image--main-image--block">
+            <button class="---large-image--back-button" type="button" aria-label="Вернуться на предыдущую страницу"></button>
+            <div class="---large-image--images {product_images_preview}">
+              <ul>
+              {__list_images_preview}
+              </ul>
+            </div>
+            <div class="---large-image--main-image">
+              <ul>
+                {__list_images}
+              </ul>
+            </div>
+            <div class="---large-image--panel {product_images_panel}">
+              <button class="---large-image--panel--button" aria-label="Показать миниатюры изображений"></button>
+            </div>
+            <div class="---large-image--nav {product_images_nav}">
+              <button class="---large-image--nav--next" aria-label="Следующее изображение"></button>
+              <button class="---large-image--nav--prev" aria-label="Предыдущее изображение"></button>
+            </div>
+          </div>
+          <div class="---product--breadcrumbs">
+            <nav>
+              <div class="breadcrumbs">
+                <ul>
+                  {breadcrumbs_list}
+                </ul>
+              </div>
+            </nav>
+          </div>
+          {__product_video}
+        </div>
+        <div class="---params">
+          <div class="---params--markers-title-like--block">
+            <div class="---params--markers-title--block">
+              <div class="---params--markers-review--block">
+                <div class="---params--markers">
+                  {__list_item_markers}
+                  <span class="__item-discount {hide_discount}">-{discount_value}%</span>
+                </div>
+                {__review_score}
+              </div>
+              <div class="---params--title">
+                <h1 itemprop="name">{product_title}</h1>
+              </div>
+            </div>
+            {__like_compare_buttons}
+          </div>
+          <div class="---params--one-word-sku--block">
+            <div class="---params--one-word">{product_type}</div>
+            <div class="---params--sku">{product_sku}</div>
+          </div>
+          {__short_features}
+          {__short_description}
+          {__options}
+        </div>
+        
+        <div class="---buy-box-delivery-brand--block">
+          <div class="---buy-box" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+            <meta itemprop="price" content="{schema_offer_price}">
+            <meta itemprop="priceCurrency" content="RUB">
+            <link itemprop="availability" href="{schema_offer_availability}">
+            <meta itemprop="sku" content="{product_sku}">
+            <div class="---buy-box--price--block">
+              <div class="---buy-box--price-inner--block">
+                <div class="---buy-box--price-oldprice--block">
+                  <div class="---buy-box--price {price_hidden} {by_request}">{price}</div>
+                  <div class="---buy-box--oldprice {oldprice_hidden}">{oldprice}</div>
+                </div>
+                <div class="---buy-box--packaging {packaging_hidden}">
+                  <div class="---buy-box--packaging--packaging-unit">{packaging_unit}</div>
+                  <div class="---buy-box--packaging--unit-price {unit_price_hidden}">{unit_price}</div>
+                  <div class="---buy-box--packaging--minimum-order {minimum_order_hidden}">{minimum_order}</div>
+                </div>
+                <div class="---buy-box--price-description {price_description_hidden}">{price_description}</div>
+              </div>
+              <div class="---buy-box--points {points_hidden}">{product_points}</div>
+              <div class="---buy-box--custom-description {custom_description_hidden}">{custom_description}</div>
+            </div>
+            <button class="---buy-box--buy-button main-button {not_in_stock} {not_in_stock_type}" data-button-text="{buy_button_text}">{buy_button_text}</button>
+            <button class="---buy-box--buy-in-one-click outline-button {buy_in_1_click_hidden}">{buy_in_1_click_button_text}</button>
+          </div>
+
+          {__in_stock}
+
+          {__delivery_block}
+
+          {__brand}
+        </div>
+      </div>
+    </div>
+
+    {__product_tabs}
+
+  </section>
+
+  {collection}
+
+  {elements}
+
+  {__reviews}
+  
+  {__additional_items}
+
+  {additional_blocks}
+
+</main>
+
+<!--##########
+__list_images
+##########-->
+
+<li class="{wide_block}" data-video="{video_url}"><link itemprop="image" href="{img_url}"><img lazy-src="{img_url}" alt="{product_title}" class="{active} {cover}"></li>
+
+<!--##########
+__product_video
+##########-->
+
+<div class="---large-image--video">
+  <div class="---large-image--video--title"><i class="fa-solid fa-circle-play"></i> Видео по товару</div>
+  <ul>
+    {__list_product_video_iframes}
+  </ul>
+</div>
+
+<!--##########
+__list_product_video_iframes
+##########-->
+
+<li>
+  <img lazy-src="{video_image_url}" alt="{video_title}">
+  <div class="---large-image--video--iframe">
+    {video_iframe}
+  </div>
+</li>
+
+<!--##########
+__list_item_markers
+##########-->
+
+<span class="__inner_marker {marker}">{marker_text}</span>
+
+<!--##########
+__review_score
+##########-->
+
+<a {reviews_link} class="---params--review-score __star-{star_num}">{review_score}</a>
+
+<!--##########
+__like_compare_buttons
+##########-->
+
+<div class="---params--buttons">
+  <button class="---params--buttons--like-button" aria-label="Избранное"></button>
+  <button class="---params--buttons--compare-button" aria-label="Сравнить товар"></button>
+</div>
+
+<!--##########
+__short_features
+##########-->
+
+<div class="---params--short-list">
+  <div class="---params--short-list--title">Характеристики:</div>
+  <ul>
+    {__list_short_features}
+  </ul>
+</div>
+
+<!--##########
+__list_short_features
+##########-->
+
+<li><span class="---params--short-list--list-title">{short_feature_title}</span><span>{short_feature_value}</span></li>
+
+<!--##########
+__short_description
+##########-->
+
+<div class="---params--short-description">
+  <meta itemprop="description" content="{schema_description}">
+  <div class="---params--short-description--title">Описание:</div>
+  <div class="---params--short-description--description">
+    <div class="elements-medium-text">{product_short_description}</div>
+  </div>
+</div>
+
+<!--##########
+__options
+##########-->
+
+<div class="---params--options">
+  {__list_options}
+</div>
+
+<!--##########
+__list_options
+##########-->
+
+<div class="---option {block_option} {select_option} {list_option} {to_top} {null} {only_one} {image_medium} {image_large} {links} {sku}" data-option-id="{option_key}" data-str-null="{data_str_null}">
+  <div class="---option--title">{option_title}</div>
+  <div class="---option--option-data">
+    <ul>
+      {__list_li_data_option}
+    </ul>
+  </div>
+</div>
+
+<!--##########
+__list_li_data_option
+##########-->
+
+<li class="{checked} {disabled_option_value}" data-key="{data_key}" data-value-key="{data_value_key}" data-price-mod-type="{price_mod_type}" data-price-mod="{price_mod}" data-change-points="{change_points}" data-points-mod="{points_mod}">{__a_link}{__li_image_before}{__li_value}{__li_image_after}{close_a}</li>
+
+<!--##########
+__li_image
+##########-->
+
+<img lazy-src="{image_url}" alt="{option_li_value}">
+
+<!--##########
+__li_value
+##########-->
+
+<span>{option_li_value}</span>
+
+<!--##########
+__a_link
+##########-->
+
+<a href="{a_link_url}">
+
+<!--##########
+__additional_items
+##########-->
+
+<section class="product--additional-items">
+  <h2>С этим товаром покупают</h2>
+  <div class="scrollable-line--list--block">
+    <div class="scrollable-line--list">
+      {__list_additional_items}
+    </div>
+  </div>
+</section>
+
+<!--##########
+__product_tabs
+##########-->
+
+<div class="stripe">
+  <div class="container">
+    <div class="product--main-item--product-description">
+      <div class="---product-tabs">
+        <ul>
+          {__first_tab}
+          {__files_tab}
+          {__list_additional_tabs}
+        </ul>
+      </div>
+      <div class="product--main-item--product-description--large-description-params--block">
+        {__tab_data_large_description}
+        {__tab_data_large_params}
+        {__tab_data_large_files}
+        {__list_data_additional_tabs}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!--##########
+__first_tab
+##########-->
+
+<li>
+  <button class="---product-tab __active" data-tab="{tab_markers}" data-tab-mode="" type="button">{tab_first_title}</button>
+</li>
+
+<!--##########
+__files_tab
+##########-->
+
+<li>
+  <button class="---product-tab" data-tab="---large-files" data-tab-mode="__one-column" type="button">Файлы</button>
+</li>
+
+<!--##########
+__list_additional_tabs
+##########-->
+
+<li>
+  <button class="---product-tab" data-tab="---large-tab-{additional_tab_index}" data-tab-mode="__one-column" type="button">{additional_tab_title}</button>
+</li>
+
+<!--##########
+__tab_data_large_description
+##########-->
+
+<div class="---large-description __active">
+  <h2>{description_product_title}</h2>
+  <div class="---large-description--text">
+    <div class="site-large-text">
+      {full_description_text}
+    </div>
+  </div>
+</div>
+
+<!--##########
+__tab_data_large_params
+##########-->
+
+<div class="---large-params __active">
+  <div class="---large-params--title">
+    <h3>Характеристики</h3>
+  </div>
+  <ul>
+    {__list_features_group}
+  </ul>
+</div>
+
+<!--##########
+__tab_data_large_files
+##########-->
+
+<div class="---large-files {files_active}">
+  <h3>Прикрепленные файлы</h3>
+  <ul>
+    {__list_product_files}
+  </ul>
+</div>
+
+<!--##########
+__list_product_files
+##########-->
+
+<li><i class="fa-solid fa-file{file_type}"></i><a href="{file_link}"><span class="---large-files--filename">{filename}</span><span class="---large-files--size">({file_size})</span></a></li>
+
+<!--##########
+__list_data_additional_tabs
+##########-->
+
+<div class="---large-tab-{additional_tab_index}">
+  <div class="---tab-title">
+    <h3>{additional_tab_title}</h3>
+  </div>
+  <div class="---tab-text">
+    <div class="site-large-text">
+      {additional_tab_text}
+    </div>
+  </div>
+</div>
+
+<!--##########
+__list_features_group
+##########-->
+
+<li>
+  <div class="---large-params--section-title">{feature_group_title}</div>
+  <ul>
+    {__list_features}
+  </ul>
+</li>
+
+<!--##########
+__list_features
+##########-->
+
+<li data-feature-key="{feature_key}" data-base-value="{feature_base_value}"><div class="---large-params--param-title">{feture_title}</div><div class="---large-params--param-value {value_sku}">{feture_value}</div></li>
+
+
+<!--##########
+__brand
+##########-->
+
+<div class="---brand">
+  <meta itemprop="brand" content="{brand_title}">
+  {__brand_image}
+  <div class="---brand--description {brand_description_hidden}">
+    <div class="elements-small-text">{brand_short_description}</div>
+  </div>
+  <button class="---brand--all-from-brand link-button" data-brand-url="{brand_url}">Все товары {brand_title}</button>
+</div>
+
+<!--##########
+__brand_image
+##########-->
+
+<div class="---brand--image">
+  <a href="{brand_url}"><img lazy-src="{url_brand_logo}" alt="{brand_title}"></a>
+</div>
+
+<!--##########
+__reviews
+##########-->
+
+<section class="reviews">
+  <div class="reviews--selector">
+    {__reviews_button}
+    {__answers_button}
+  </div>
+  {__reviews_main_block}
+  {__questions_main_block}
+</section>
+
+<!--##########
+__reviews_button
+##########-->
+
+<button class="reviews--selector--selector-button __active" id="reviews" type="button">Отзывы</button>
+
+<!--##########
+__answers_button
+##########-->
+
+<button class="reviews--selector--selector-button {a_active}" id="answers" type="button">Ответы на вопросы</button>
+
+<!--##########
+__reviews_main_block
+##########-->
+
+<div class="reviews--block {reviews_main_block_active} {questions}">
+  {__r_review_score}
+  {__reviews_images}
+  {__reviews_block}
+  {__reviews_all_button}
+  {__questions_all_button}
+</div>
+
+<!--##########
+__r_review_score
+##########-->
+
+<div class="reviews--review-score--block">
+  <div class="reviews--review-score __star-{r_star_num}">{r_review_score}</div>
+  <div class="reviews--review-count">{r_review_count}</div>
+</div>
+
+<!--##########
+__reviews_images
+##########-->
+
+<div class="reviews--images--block">
+  <div class="reviews--images">
+    <ul>
+      {__list_reviews_images}
+    </ul>
+  </div>
+</div>
+
+<!--##########
+__list_reviews_images
+##########-->
+
+<li><img lazy-src="{review_image_url}" alt="{review_image_alt}" data-review-id="{review_id}"></li>
+
+<!--##########
+__reviews_block
+##########-->
+
+<div class="reviews--list--block">
+  <div class="reviews--list">
+    {__list_review_articles}
+  </div>
+</div>
+
+<!--##########
+__list_review_articles
+##########-->
+
+<article class="---review {review_class_active}" data-review-id="{review_id}">
+  <div class="---review--top--block">
+    <div class="---review--top--name">{review_username}</div>
+    <div class="---review--top--date">{review_date}</div>
+    {__scorenum}
+  </div>
+  <div class="---review--main--block">
+    <div class="---review--main--text">
+      <div class="---review--main--text--user">{review_text}</div>
+      {__answer_block}
+    </div>
+    {__review_image}
+  </div>
+</article>
+
+<!--##########
+__scorenum
+##########-->
+
+<div class="---review--top--score __star-{review_scorenum}"></div>
+
+<!--##########
+__answer_block
+##########-->
+
+<div class="---review--main--text--answer--block">
+  <div class="---review--main--text--answer">{answer_text}</div>
+  <div class="---review--main--text--signature">{answer_signature}</div>
+</div>
+
+<!--##########
+__review_image
+##########-->
+
+<div class="---review--main--image"><img alt="{review_image_alt}" lazy-src="{review_image_src}"></div>
+
+<!--##########
+__reviews_all_button
+##########-->
+
+<button class="reviews--all-button outline-button" id="reviews--all-button" type="button">Все отзывы</button>
+
+<!--##########
+__questions_all_button
+##########-->
+
+<button class="reviews--all-button outline-button" id="questions--all-button" type="button">Все вопросы</button>
+
+<!--##########
+__delivery_block
+##########-->
+
+<div class="---delivery">
+  <div class="---delivery--city" data-city-id="">
+    <div class="---delivery--city--selected--block">
+      <div class="---delivery--city--selected">Определяем город</div>
+      <div class="---delivery--city--region"></div>
+    </div>
+    <button class="---delivery--select-city" aria-label="Выбрать город доставки"><i class="fa-solid fa-arrow-right-to-city"></i></button>
+  </div>
+  <button class="---delivery--get-delivery link-button" type="button">Рассчитать доставку</button>
+  <div class="---delivery--loading">Обновляю данные по доставкам</div>
+  <div class="---delivery--free" data-multiple-limit="{data_multiple_limit}">
+    <div class="---delivery--free--text">
+      Мы предоставляем скидки на доставку в зависимости от суммы товаров в <span class="---delivery--free--open-cart">Корзине <i class="fa-solid fa-cart-shopping"></i></span>
+    </div>
+  </div>
+  <div class="---delivery--results">
+    <ul>
+
+    </ul>
+  </div>
+</div>
+
+<!--##########
+__in_stock
+##########-->
+
+<div class="---buy-box--in-stock">
+  <div class="---in-stock--status {in_stock_color_class}">{in_stock_status}</div>
+  <div class="---in-stock--info {in_stock_info_hidden}">{in_stock_info}</div>
+  <div class="---in-stock--loading">
+    <div></div>
+    <div></div>
+    <div></div>
+  </div>
+  <div class="---buy-box--in-stock--warehouse {warehouses_status}">
+    <ul>
+
+    </ul>
+    <div class="---warehouse--more __hidden">
+      <button type="button">Посмотреть все магазины</button>
+    </div>
+  </div>
+  <div class="---in-stock--error __hidden"></div>
+</div>
+
+<!--##########
+__list_warehouses
+##########-->
+
+<li class="{warehouse_type} {lock}" data-warehouse-index="{data_warehouse_index}"><div class="---warehouse--block"><div class="---warehouse--title">{warehouse_title}:</div><div class="---warehouse--count">{warehouse_stock}</div><div class="---warehouse--comment">{warehouse_comment}</div></div></li>
+

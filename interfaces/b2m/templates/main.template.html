@@ -1,0 +1,68 @@
+<!--##########
+main
+##########-->
+
+<main class="main-page" style="--poster-none: none;">
+  {__list_main_page_elements}
+</main>
+
+<!--##########
+__list_main_page_elements
+##########-->
+
+<!-- __hits __latest __discounts в этом шаблоне, также используются готовые элементы banner / gallery / collection-full и шаблон collection-group.template.html -->
+
+<!--##########
+__hits
+##########-->
+
+<section class="main-page--stripes" id="hits">
+  <div class="main-page--stripes--title--block">
+    <h2>{hits_title}</h2>
+    <a href="{hits_url}">/ {hits_link_text}</a>
+  </div>
+  {__hits_scrollable_line}
+</section>
+
+<!--##########
+__hits_scrollable_line
+##########-->
+
+<!-- используется шаблон scrollable-line.template.html -->
+
+<!--##########
+__latest
+##########-->
+
+<section class="main-page--stripes" id="latest">
+  <div class="main-page--stripes--title--block">
+    <h2>{latest_title}</h2>
+    <a href="{latest_url}">/ {latest_link_text}</a>
+  </div>
+  {__latest_scrollable_line}
+</section>
+
+<!--##########
+__latest_scrollable_line
+##########-->
+
+<!-- используется шаблон scrollable-line.template.html -->
+
+<!--##########
+__discounts
+##########-->
+
+<section class="main-page--stripes" id="latest">
+  <div class="main-page--stripes--title--block">
+    <h2>{discounts_title}</h2>
+    <a href="{discounts_url}">/ {discounts_link_text}</a>
+  </div>
+  {__discounts_scrollable_line}
+</section>
+
+<!--##########
+__discounts_scrollable_line
+##########-->
+
+<!-- используется шаблон scrollable-line.template.html -->
+

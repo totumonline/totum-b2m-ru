@@ -1,0 +1,65 @@
+<section class="short--header">
+  <button class="short--header--go-back" type="button" aria-label="Вернуться на предыдущую страницу"></button>
+  <div class="short--header--logo">
+    <a href="/">
+      <picture>
+        <source media="(max-width: 600px)" srcset="{logo_small}">
+        <img src="{logo_big}" alt="Bitum">
+      </picture>
+    </a>
+  </div>
+  <button class="short--header--close" type="button" aria-label="Вернуться на главную страницу"></button>
+</section>
+
+<main class="auth-signup {token_auth}" data-auth-page="signup">
+  <div class="narrow-container">
+    <div class="auth-signup--card--block">
+      <div class="auth-signup--card">
+        <div class="auth-signup--card--head">
+          <div class="auth-signup--card--head--title">Регистрация</div>
+        </div>
+
+        <div class="auth-signup--card--message" role="alert" aria-live="polite"></div>
+
+        <form class="auth-signup--card--signup-form" novalidate>
+          <div class="---signup-form--pass-hint">Укажите ваши Email и пароль</div>
+
+          <div class="---signup-form--token-hint">Укажите ваш Email, на него будет отправлена ссылка для входа в личный кабинет</div>
+
+          <div class="---signup-form--field">
+            <label for="signup-login">Email</label>
+            <div class="---signup-form--input--block">
+              <input type="email" id="signup-login" name="login" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="{email_placeholder}">
+              <button type="button" class="__clear" tabindex="-1" aria-label="Очистить"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+
+          <div class="---signup-form--pass">
+            <label for="signup-pass">Пароль</label>
+            <div class="---signup-form--input--block">
+              <input type="password" id="signup-pass" name="pass" autocomplete="new-password" placeholder="Пароль">
+              <button type="button" class="__reveal" tabindex="-1" aria-label="Показать пароль"><i class="fa-solid fa-eye"></i></button>
+            </div>
+          </div>
+
+          <div style="height: 100px; width: 100%" id="captcha-container" class="smart-captcha" data-sitekey="{yandex_capcha_public_key}"></div>
+
+          <button type="submit" class="---signup-form--submit main-button">Зарегистрироваться</button>
+
+          <a class="---signup-form--login transparent-button" href="/auth">Войти</a>
+        </form>
+
+        <div class="auth-signup--card--openid">
+          <div class="auth-signup--card--openid--title">Или зарегистрируйтесь через</div>
+          <div class="auth-signup--card--openid--list">
+            <ul></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-signup--card--terms">
+        {registration_html}
+      </div>
+    </div>
+  </div>
+</main>

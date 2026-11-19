@@ -1,0 +1,94 @@
+<?php
+
+
+namespace totum\commands;
+
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
+use totum\common\Crypt;
+use totum\common\Totum;
+use totum\config\Conf;
+
+class GitUpdate extends Command
+{
+    protected function configure()
+    {
+        $this->setName('git-update')
+            ->addOption('force', '', InputOption::VALUE_NONE, 'Force update without checking changing major version.')
+            ->setDescription('update from git origin pro && composer && schema(s)-update');
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $output->writeln('');
+        $output->writeln('******************************************');
+        $output->writeln('ATTENTION — git-update is deactivated!');
+        $output->writeln('For B2M, use the bin/totum b2m-update command to update.');
+        $output->writeln('******************************************');
+        $output->writeln('');
+        return 1;
+
+       if (!$input->getOption('force')) {
+            $error = true;
+            if ($totumClass = file_get_contents('https://raw.githubusercontent.com/totumonline/totum-pro/pro/totum/common/Totum.php')) {
+                if (preg_match('/public\s*const\s*VERSION = \'(\d+)/', $totumClass, $matches)) {
+                    $oldVersion = (string)preg_replace('/^(\d+).*$/', '$1', Totum::VERSION);
+                    if ($oldVersion !== $matches[1]) {
+                        die('This update will change the major version from '.$oldVersion.' to ' . $matches[1].' '.
+                            'Check server settings and backward compatibility violations at https://github.com/totumonline/totum-pro/blob/pro/UPDATES.md ' .
+                            'Use --force if you are sure about the update.');
+                    } else {
+                        $error = false;
+                    }
+                }
+            }
+            if ($error) {
+                die('Access to the files on GitHub has been restricted. The major version change check failed. ' .
+                    'Check yourself at https://github.com/totumonline/totum-pro/blob/pro/totum/common/Totum.php ' .
+                    'Use --force if you are sure about the update.');
+            }
+        }
+
+        $Conf = new Conf();
+        $serviceName = $Conf->getProGoModuleServiceName();
+        $Conf->setSessionCookieParams();
+        $scheme = session_get_cookie_params()['secure'] ? 'https' : 'http';
+
+
+        passthru('git pull origin pro && php -f composer.phar self-update --2 && php -f composer.phar install --no-dev');
+
+
+
+        $uri = $scheme.'://'.$Conf->getSomeHost().'/Commands/reset-opcache';
+
+        $context = stream_context_create(
+            [
+                'http' => [
+                    'header' => "Content-type: application/x-www-form-urlencoded\r\nUser-Agent: TOTUM\r\nConnection: Close\r\n\r\n",
+                    'method' => 'POST',
+                    'content' => http_build_query([
+                        'key' => Crypt::getCrypted(date('H-m-d'), $Conf->getCryptKeyFileContent()),
+                    ])
+                ],
+                'ssl' => [
+                    'verify_peer' => $Conf->isCheckSsl(),
+                    'verify_peer_name' => $Conf->isCheckSsl(),
+                ],
+            ]
+        );
+        $data = file_get_contents($uri, true, $context);
+        if ($data) {
+            echo $data;
+        }
+
+        if (is_callable([$Conf, 'setHostSchema'])) {
+            passthru('sudo service '.$serviceName.' restart && bin/totum schemas-update');
+        } else {
+            passthru('sudo service '.$serviceName.' restart && bin/totum schema-update');
+        }
+
+        return 0;
+    }
+}

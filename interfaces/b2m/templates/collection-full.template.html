@@ -1,0 +1,95 @@
+<!--##########
+main
+##########-->
+
+<section class="product--collection additional_classes_list">
+  <div class="stripe">
+    <div class="product--collection--items-poster--block">
+      <div class="collection--items">
+        {__collection_title_block}
+        <div class="collection--items--list">
+          {__list_collection_item}
+        </div>
+        {__link_to_page}
+        {__additional_links}
+      </div>
+      {__collection_poster}
+    </div>
+  </div>
+</section>
+
+<!--##########
+__collection_title_block
+##########-->
+
+<div class="collection--items--title--block">
+  {__collection_subtitle}
+  {__collection_title}
+  {__collection_description}
+</div>
+
+<!--##########
+__collection_subtitle
+##########-->
+
+<div class="collection--items--subtitle">{collection_subtitle}</div>
+
+<!--##########
+__collection_title
+##########-->
+
+<div class="collection--items--title">
+  <h2>{collection_title}</h2>
+</div>
+
+<!--##########
+__collection_description
+##########-->
+
+<div class="collection--items--description">
+  <div class="elements-medium-text">{collection_description}</div>
+</div>
+
+<!--##########
+__list_collection_item
+##########-->
+
+<article class="---collection-item" data-product-id="{product_id}">
+  <a href="{product_url}">
+    <div class="---collection-item--image {cover}">
+      <img lazy-src="{product_image_url}" alt="{product_name}">
+    </div>
+    <div class="---collection-item--title">{product_name}</div>
+    <div class="---collection-item--price">{product_price}</div>
+  </a>
+</article>
+
+<!--##########
+__link_to_page
+##########-->
+
+<button class="outline-button" data-link="{page_link}">{button_text}</button>
+
+<!--##########
+__additional_links
+##########-->
+
+<div class="collection--items--additional-links">
+  <ul>
+    {__list_li_additional_links}
+  </ul>
+</div>
+
+<!--##########
+__list_li_additional_links
+##########-->
+
+<li><a href="{additional_link}">{additional_link_title}</a></li>
+
+<!--##########
+__collection_poster
+##########-->
+
+<div class="product--collection--poster">
+  <img lazy-src="{poster_url}" alt="{collection_title}">
+</div>

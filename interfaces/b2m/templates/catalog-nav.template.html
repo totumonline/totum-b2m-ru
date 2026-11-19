@@ -1,0 +1,24 @@
+<!--##########
+main
+##########-->
+
+<section class="catalog--categories">
+  <nav>
+    <ul>
+      {__list_subcategories}
+    </ul>
+  </nav>
+</section>
+
+<!--##########
+__list_subcategories
+##########-->
+
+<li>
+  <a href="{subcategory_link}">
+    <div class="catalog--categories--category-image">
+      <img lazy-src="{subcategory_image_url}" alt="{subcategory_title}">
+    </div>
+    <div class="catalog--categories--category-name">{subcategory_title}</div>
+  </a>
+</li>

@@ -1,0 +1,39 @@
+<!--##########
+main
+##########-->
+
+<section class="short--footer">
+  <div class="container">
+    <div class="short--footer--block">
+      <div class="short--footer--company-name">{copyright_text}</div>
+      <div class="short--footer--contacts--block">
+        <div class="short--footer--phone"><a class="phone" href="tel:+{main_phone_call}">{main_phone}</a></div>
+        <button class="short--footer--contacts outline-button" type="button">Контакты</button>
+      </div>
+      <div class="short--footer--payments">
+        <ul>
+          {__list_payments_icons}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!--##########
+__list_payments_icons
+##########-->
+
+<li>{__payment_icon_i}{__payment_icon_img}</li>
+
+<!--##########
+__payment_icon_i
+##########-->
+
+<!--<i style="color:{icon_color}" class="fa-brands {payment_icon}"></i>-->
+
+<!--##########
+__payment_icon_img
+##########-->
+
+<img src="{payment_icon_img_src}">

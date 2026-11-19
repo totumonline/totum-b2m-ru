@@ -1,0 +1,30 @@
+<!--##########
+main
+##########-->
+
+<div class="city--block">
+  <div class="city--header">
+  <div class="city--header--title">Выбор города</div>
+    <button class="city--header--close" type="button" aria-label="Закрыть выбор города"></button>
+  </div>
+
+  <div class="city--search--block">
+    <input type="text" id="city-search-input" name="city-search" placeholder="Найти" inputmode="search" autocomplete="off" autocapitalize="off" autocorrect="off">
+    <button type="button" class="__clear" aria-label="Очистить поиск города">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <div class="city--results--suggestions __active">
+    <ul>
+      {__list_cities}
+    </ul>
+  </div>
+
+</div>
+
+<!--##########
+__list_cities
+##########-->
+
+<li data-city-id="{city_fias}" data-city="{city}" data-region="{region}" data-city-address="{city_address}">{city}</li>

@@ -1,0 +1,114 @@
+<!--##########
+main
+##########-->
+
+<footer>
+  <div class="container">
+    <nav id="footer-main-menu">
+      <section class="footer--main-menu">
+        {__list_footer_column}
+        {__subscribe_column}
+      </section>
+    </nav>
+
+    <section class="footer--middle">
+      <nav id="footer-social">
+        <div class="footer--middle--social">
+          <ul>
+            {__list_social_icons}
+          </ul>
+        </div>
+      </nav>
+      <div class="footer--middle--payments">
+        <ul>
+          {__list_payments_icons}
+        </ul>
+      </div>
+    </section>
+
+    <section class="footer--bottom">
+      {__list_extended_footer_column}
+      <div class="footer--copyright">{copyright_text}</div>
+    </section>
+  </div>
+</footer>
+
+<!--##########
+__list_footer_column
+##########-->
+
+<div class="---footer-column">
+  <div class="---footer-column--title">{footer_column_name}</div>
+  <ul>
+    {__list_footer_column_li}
+  </ul>
+</div>
+
+<!--##########
+__list_footer_column_li
+##########-->
+
+<li><a href="{footer_element_link}">{footer_element_name}</a></li>
+
+<!--##########
+__subscribe_column
+##########-->
+
+<div class="---footer-column __additional">
+  <div class="---footer-column--title">{subscribe_column_title}</div>
+  <button class="footer--newsletter-button outline-button">{subscribe_button_text}</button>
+</div>
+
+<!--##########
+__list_social_icons
+##########-->
+
+<li><a href="{social_link}" rel="nofollow" aria-label="Мы в соцсетях">{__social_icons_i}{__social_icon_img}</a></li>
+
+<!--##########
+__social_icons_i
+##########-->
+
+<!--<i style="color:{icon_color}" class="fa-brands {social_icon}"></i>-->
+
+<!--##########
+__social_icon_img
+##########-->
+
+<img src="{social_icon_img_src}" alt="">
+
+<!--##########
+__list_payments_icons
+##########-->
+
+<li>{__payment_icon_i}{__payment_icon_img}</li>
+
+<!--##########
+__payment_icon_i
+##########-->
+
+<!--<i style="color:{icon_color}" class="fa-brands {payment_icon}"></i>-->
+
+<!--##########
+__payment_icon_img
+##########-->
+
+<img src="{payment_icon_img_src}">
+
+<!--##########
+__list_extended_footer_column
+##########-->
+
+<nav id="footer-bottom-menu">
+  <div class="footer--bottom-menu">
+    <ul>
+      {__list_extended_footer_column_li}
+    </ul>
+  </div>
+</nav>
+
+<!--##########
+__list_extended_footer_column_li
+##########-->
+
+<li><a href="{extended_footer_column_link}">{extended_footer_column_name}</a></li>

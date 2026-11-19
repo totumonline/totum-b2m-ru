@@ -1,0 +1,153 @@
+<!--##########
+main
+##########-->
+
+<main class="catalog" style="--poster: url({poster_url}); --poster-none: none;" data-video="{video_url}" data-mobile-video="{mobile_video_url}">
+  <div class="catalog--title-categories--block {poster_class} {white_poster_class}">
+    <section class="catalog--catalog-title">
+      <div class="container">
+        <div class="catalog--catalog-title-breadcrumbs--block">
+          <button class="catalog--catalog-title--back-button" data-back-link="{back_link}" type="button">{back_link_title}</button>
+          <h1>{catalog_title}</h1>
+          <nav>
+            <div class="breadcrumbs">
+              <ul>
+                {breadcrumbs_li_list}
+              </ul>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </section>
+
+    {__inner_categories}
+    
+    <div class="loading-video">Загружается видео</div>
+  </div>
+
+  {__brand_page_text}
+
+  {__filters_section}
+
+  {__search}
+
+  <section class="catalog--items">
+    <div class="container">
+      {__back_button}
+      <div class="items-grid">
+        {__list_articles}
+      </div>
+    </div>
+    <div class="catalog--items--nothing-found">
+      <span>Упс! Похоже, что ничего не нашлось...</span> <i class="fa-solid fa-filter-circle-xmark"></i>
+    </div>
+    <div class="catalog--items--more {hidden} {autoload}">
+      <a href="{more_link}">Показать еще</a>
+    </div>
+  </section>
+
+  {__category_text}
+
+</main>
+
+<!--##########
+__brand_page_text
+##########-->
+
+<section class="brand-page--main">
+  <div class="container">
+    <div class="brand-page--main--logo-text--block">
+      <div class="brand-page--main--logo">
+        <img lazy-src="{brand_logo}" alt="{brand_name}">
+      </div>
+      <div class="brand-page--main--text">
+        <div class="site-large-text">
+          {brand_page_text}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--##########
+__filters_section
+##########-->
+
+<!-- Берется из заранее сгенерированного html фильтра этого раздела filter.template.html -->
+
+<!--##########
+__search
+##########-->
+
+<section class="search">
+  <div class="container">
+    <div class="search--fixed">
+      <div class="search--fixed--search--block">
+        <input type="text" id="search-input" name="search" placeholder="Хочу купить" inputmode="search" autocomplete="off" autocapitalize="off" autocorrect="off" value="{search_string}"> <button type="button" class="__clear" aria-label="Очистить поиск"><i class="fa-solid fa-xmark"></i></button> <button type="submit" class="__submit" aria-label="Найти товары"><i class="fa-solid fa-arrow-right-long"></i></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--##########
+__back_button
+##########-->
+
+<button class="catalog--items--back outline-button" data-link="{data_link}">Показать товары на предыдущей странице</button>
+
+<!--##########
+__list_articles
+##########-->
+
+<!-- Берется из заранее сгенерированных html итемов item.template.html -->
+
+<!--##########
+__inner_categories
+##########-->
+
+<!-- Берется из заранее сгенерированных html catalog-nav.template.html -->
+
+<!-- Для страниц брендов используется __page_connection -->
+
+<!--##########
+__category_text
+##########-->
+
+<section class="catalog--text">
+  <div class="container">
+    <div class="site-large-text">
+      {category_text}
+    </div>
+  </div>
+</section>
+
+<!--##########
+__page_connection
+##########-->
+
+<section class="page--connected">
+  <nav>
+    <ul>
+      {__list_li_connection}
+    </ul>
+  </nav>
+</section>
+
+<!--##########
+__list_li_connection
+##########-->
+
+<li>
+  <a href="{connected_page_link}">
+    {__connected_page_image}
+    <div class="page--connected--page-name">{connected_page_name}</div>
+  </a>
+</li>
+
+<!--##########
+__connected_page_image
+##########-->
+
+<div class="page--connected--page-image">
+  <img lazy-src="{connected_image_url}" alt="{connected_page_alt}">
+</div>

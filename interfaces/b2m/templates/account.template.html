@@ -1,0 +1,337 @@
+<!--##########
+main
+##########-->
+
+<main class="account" style="--poster: url({poster_url}); --poster-none: none;" data-video="{video_url}" data-mobile-video="{mobile_video_url}">
+  <div class="account--title--block {poster_class} {white_poster_class}">
+    <section class="account--account-title">
+      <div class="container">
+        <div class="account--account-title--block">
+          <div class="account--account-title--h1--block">
+            <h1>{user_name}</h1>
+            <div class="account--account-title--user-email">{user_email}</div>
+            <div class="account--account-title--user-tel">{user_tel}</div>
+            {__user_level}
+          </div>
+          <button class="account--account-title--edit glass-button" type="button" aria-label="Редактировать профиль"><i class="fa-solid fa-pen-to-square"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="account--connections">
+      <nav>
+        <ul>
+          {__list_inner_pages}
+        </ul>
+      </nav>
+    </section>
+    
+    <div class="loading-video">Загружается видео</div>
+  </div>
+
+  {__account_info}
+
+  {__account_notification_page}
+
+  {__account_reviews_page}
+
+  {__account_orders_page}
+  
+</main>
+
+<!--##########
+__list_inner_pages
+##########-->
+
+<li class="{page_active}">
+  <a href="{connected_page_link}">
+    {__connected_page_image}
+    <div class="account--connections--page-name">{connected_page_name}</div>
+  </a>
+</li>
+
+<!--##########
+__connected_page_image
+##########-->
+
+<div class="account--connections--page-image">
+  <img lazy-src="{connected_image_url}" alt="{connected_page_alt}">
+</div>
+
+<!--##########
+__account_info
+##########-->
+
+<section class="account--info">
+  <div class="container">
+    <div class="limited-container">
+      <div class="account--info--block">
+
+        <div class="account--info--links">
+          <button class="account--info--links--cart outline-button" type="button">
+            <div class="account--info--links--icon"><i class="fa-solid fa-cart-shopping"></i></div>
+            <div class="account--info--links--name">Корзина</div>
+            <div class="account--info--links--count" data-count="{cart_items_count}">{cart_items_count}</div>
+          </button>
+          <button class="account--info--links--favorites outline-button" type="button" data-link="/favorites">
+            <div class="account--info--links--icon"><i class="fa-solid fa-heart"></i></div>
+            <div class="account--info--links--name">Избранное</div>
+            <div class="account--info--links--count" data-count="{favorites_count}">{favorites_count}</div>
+          </button>
+        </div>
+
+        <div class="account--info--orders-notifications--block">
+          <div class="account--info--orders">
+            <div class="account--info--orders--title">Мои Заказы/Заявки</div>
+            <div class="account--info--orders--list">
+              <div class="account--info--orders--zero">Вы еще не сделали ни одного заказа — это легко исправить!</div>
+              <ul>
+                {__list_orders}
+              </ul>
+            </div>
+            <button class="account--info--orders--all-button outline-button" type="button" data-link="/account/orders">Все заказы</button>
+            <button class="account--info--orders--catalog outline-button" type="button" data-link="/catalog">Каталог</button>
+          </div>
+
+          <div class="account--info--notifications">
+            <div class="account--info--notifications--title">Уведомления</div>
+            <div class="account--info--notifications--list">
+              <div class="account--info--notifications--zero">Пока что нет нотификаций. Когда придут — они появятся здесь и вы получите их на email.</div>
+              <ul>
+                {__list_notifications}
+              </ul>
+            </div>
+            <button class="account--info--notifications--all-button outline-button" type="button" data-link="/account/notifications">Все уведомления</button>
+          </div>
+        </div>
+
+        <div class="account--info--addresses-reviews--block">
+          <div class="account--info--addresses">
+            <div class="account--info--addresses--title">Мои адреса</div>
+            <div class="account--info--addresses--list">
+              <div class="account--info--addresses--zero">Пока нет ни одного запомненного адреса — ничего страшного, мы сохраним его при первом же заказе</div>
+              <ul>
+                {__list_addresses}
+              </ul>
+            </div>
+            <button class="account--info--addresses--add-button outline-button" type="button">Добавить адрес</button>
+            <div class="account--info--addresses--add-description">Можно сохранить до 5 адресов</div>
+          </div>
+
+          <div class="account--info--reviews">
+            <div class="account--info--reviews--title">Мои отзывы и вопросы</div>
+            <div class="account--info--reviews--list">
+              <div class="account--info--reviews--zero">Вы еще не оставляли ни одного отзыва — это можно сделать по ссылке в письме, которое мы отправляем после получения заказа или зайдя в выполненый заказ в разделе Мои заказы</div>
+              <ul>
+                {__list_reviews}
+              </ul>
+            </div>
+            <button class="account--info--reviews--all-button outline-button" type="button" data-link="/account/reviews">Все отзывы</button>
+          </div>
+        </div>
+
+        <div class="account--info--profile-buttons">
+          <button class="account--info--profile-buttons--logout main-button" type="button">Выйти</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--##########
+__list_orders
+##########-->
+
+<li class="{blocked}" data-order-uid="{data_order_uid}">
+  <div class="---orders-list--head--block">
+    <div class="---orders-list--number"># {order_number}</div>
+    <div class="---orders-list--date">{order_date}</div>
+    <div class="---orders-list--status">{order_status}</div>
+  </div>
+  <div class="---orders-list--products-sum--block">
+    <div class="---orders-list--products">
+      <ul>
+        {__list_order_products}
+      </ul>
+    </div>
+    <div class="---orders-list--sum--block {sum_block_hidden}">
+      <div class="---orders-list--sum--value">{order_sum}</div>
+      <div class="---orders-list--sum--label">{payment_status}</div>
+    </div>
+  </div>
+</li>
+
+<!--##########
+__list_order_products
+##########-->
+
+<li>
+  <div class="---orders-list--products--image">
+    <img lazy-src="{product_img_url}">
+  </div>
+</li>
+
+<!--##########
+__list_notifications
+##########-->
+
+<li class="{read_more}" data-notification-id="{notification_id}">
+  <div class="---notifications-list--item--date">{notification_date}</div>
+  <div class="---notifications-list--item--text">{notification_text}</div>
+  <button class="---notifications-list--item--read-more outline-button" type="button">Подробнее</button>
+</li>
+
+<!--##########
+__list_addresses
+##########-->
+
+<li data-address-id="{address_id}">
+  <div class="---addresses-list--city">{city}</div>
+  <div class="---addresses-list--region">{region}</div>
+  <div class="---addresses-list--street--block">
+    <div class="---addresses-list--street">{street}</div>
+    {__apartment}
+    {__entrance}
+    {__intercom}
+    {__floor}
+  </div>
+  {__comment}
+  <div class="---addresses-list--edit-icon"><i class="fa-solid fa-pencil"></i></div>
+</li>
+
+<!--##########
+__apartment
+##########-->
+
+<div class="---addresses-list--more">квартира/офис {apartment}</div>
+
+<!--##########
+__entrance
+##########-->
+
+<div class="---addresses-list--more">подъезд {entrance}</div>
+
+<!--##########
+__intercom
+##########-->
+
+<div class="---addresses-list--more">домофон {intercom}</div>
+
+<!--##########
+__floor
+##########-->
+
+<div class="---addresses-list--more">этаж {floor}</div>
+
+<!--##########
+__comment
+##########-->
+
+<div class="---addresses-list--comment">{comment}</div>
+
+<!--##########
+__list_reviews
+##########-->
+
+<li data-review-id="{review_id}">
+  <div class="---reviews-list--image">
+    <a href="{review_product_link}"><img lazy-src="{review_product_image_url}" alt="{review_product_image_alt}"></a>
+  </div>
+  <div class="---reviews-list--content--block">
+    <div class="---reviews-list--name"><a href="{review_product_link}">{review_product_title}</a><div class="---reviews-list--type">{review_type}</div></div>
+    {__review_star_block}
+    <div class="---reviews-list--text">{review_short_text}</div>
+    {__review_answer}
+    <button class="---reviews-list--show-review outline-button" type="button">Посмотреть целиком</button>
+  </div>
+</li>
+
+<!--##########
+__review_star_block
+##########-->
+
+<div class="---reviews-list--rating __star-{star_index}">{star_num}</div>
+
+<!--##########
+__review_answer
+##########-->
+
+<div class="---reviews-list--answer">{review_short_answer}</div>
+
+<!--##########
+__user_level
+##########-->
+
+<div class="account--account-title--user-level">
+  <ul>
+    {__list_user_levels}
+  </ul>
+</div>
+
+<!--##########
+__list_user_levels
+##########-->
+
+<li>{user_level}</li>
+
+<!--##########
+__account_notification_page
+##########-->
+
+<section class="account--notifications--page">
+  <div class="container">
+    <div class="account--notifications--block">
+      <div class="account--info--notifications">
+        <div class="account--info--notifications--title">Уведомления</div>
+        <div class="account--info--notifications--list">
+          <div class="account--info--notifications--zero">Пока что нет нотификаций. Когда придут — они появятся здесь и вы получите их на email.</div>
+          <ul>
+            {__list_notifications}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--##########
+__account_reviews_page
+##########-->
+
+<section class="account--reviews--page">
+  <div class="container">
+    <div class="account--reviews--block">
+      <div class="account--info--reviews">
+        <div class="account--info--reviews--title">Мои отзывы и вопросы</div>
+        <div class="account--info--reviews--list">
+          <div class="account--info--reviews--zero">Вы еще не оставляли ни одного отзыва — это можно сделать по ссылке в письме, которое мы отправляем после получения заказа или зайдя в выполненый заказ в разделе Мои заказы</div>
+          <ul>
+            {__list_reviews}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--##########
+__account_orders_page
+##########-->
+
+<section class="account--orders--page">
+  <div class="container">
+    <div class="account--orders--block">
+      <div class="account--info--orders">
+        <div class="account--info--orders--title">Мои Заказы/Заявки</div>
+        <div class="account--info--orders--list">
+          <div class="account--info--orders--zero">Вы еще не сделали ни одного заказа — это легко исправить!</div>
+          <ul>
+            {__list_orders}
+          </ul>
+        </div>
+        <button class="account--info--orders--catalog outline-button" type="button" data-link="/catalog">Каталог</button>
+      </div>
+    </div>
+  </div>
+</section>

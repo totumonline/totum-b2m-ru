@@ -1,0 +1,59 @@
+<div class="mobile-right-panel--header">
+  <button class="mobile-right-panel--header--title" type="button" aria-label="Закрыть: Профиль">Профиль</button>
+  <button class="mobile-right-panel--close" type="button" aria-label="Закрыть"></button>
+</div>
+
+<div class="mobile-right-panel--content">
+  <div class="mobile-right-panel--input--block">
+    <div class="mobile-right-panel--input--title">Email</div>
+    <div class="mobile-right-panel--input">
+      <input type="email" id="profile-email" autocomplete="email" maxlength="300" disabled>
+    </div>
+    <div class="mobile-right-panel--input--description">Email указывается при создании аккаунта и не редактируется</div>
+  </div>
+
+  <div class="mobile-right-panel--input--block">
+    <div class="mobile-right-panel--input--title">Мое имя</div>
+    <div class="mobile-right-panel--input __required">
+      <i class="fa-solid fa-asterisk"></i>
+      <input type="text" id="profile-name" placeholder="Укажите имя" autocomplete="name" maxlength="300">
+    </div>
+  </div>
+
+  <div class="mobile-right-panel--input--block">
+    <div class="mobile-right-panel--input--title">Мой телефон</div>
+    <div class="mobile-right-panel--input">
+      <input type="tel" id="profile-tel" placeholder="+7 (000) 000-00-00" autocomplete="tel" maxlength="300">
+    </div>
+  </div>
+
+  <div class="mobile-right-panel--input--block">
+    <div class="mobile-right-panel--input--title">Задать пароль</div>
+    <div class="mobile-right-panel--input">
+      <input type="password" id="profile-password" placeholder="Новый пароль" autocomplete="new-password" maxlength="300">
+      <button class="__reveal" type="button" tabindex="-1" aria-label="Показать пароль"><i class="fa-solid fa-eye"></i></button>
+    </div>
+    <div class="mobile-right-panel--input--description">Пароль меняется только если поле заполнено. Допустимы символы a-z A-Z 0-9 пробел - _ ! * не менее 8 символов</div>
+  </div>
+
+  <div class="mobile-right-panel--toggle--block">
+    <div class="mobile-right-panel--toggle--title">Настройки email</div>
+    <div class="mobile-right-panel--toggle" id="profile-notifications">
+      <div class="mobile-right-panel--toggle--track">
+        <div class="mobile-right-panel--toggle--slider"></div>
+      </div>
+      <div class="mobile-right-panel--toggle--label">Получать нотификации о заказах и технические сообщения</div>
+    </div>
+    <div class="mobile-right-panel--toggle" id="profile-newsletter">
+      <div class="mobile-right-panel--toggle--track">
+        <div class="mobile-right-panel--toggle--slider"></div>
+      </div>
+      <div class="mobile-right-panel--toggle--label">Получать рассылку</div>
+    </div>
+  </div>
+</div>
+
+<div class="mobile-right-panel--accept-cansel--block">
+  <button class="mobile-right-panel--cansel" type="button" aria-label="Отменить">Отменить</button>
+  <button class="mobile-right-panel--accept" type="button" aria-label="Применить">Применить</button>
+</div>

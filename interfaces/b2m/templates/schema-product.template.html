@@ -1,0 +1,42 @@
+<!--##########
+main
+##########-->
+
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "@id": "{product_schema_id}#product",
+  "name": "{product_name}",
+  "url": "{product_url}",
+  "image": {list_image_urls},
+  "description": "{short_description}",
+  "brand": {
+    "@type": "Brand",
+    "name": "{brand_name}"
+  }
+  {__product_rating}
+  ,
+  "offers": {
+    "@type": "Offer",
+    "@id": "{product_offer_id}",
+    "url": "{product_offer_url}",
+    "sku": "{product_sku}",
+    "priceCurrency": "RUB",
+    "price": "{schema_offer_price}",
+    "availability": "{schema_offer_availability}",
+    "seller": {
+      "@id": "{organisation_host}#organization"
+    }
+  }
+}
+
+<!--##########
+__product_rating
+##########-->
+
+,
+"aggregateRating": {
+  "@type": "AggregateRating",
+  "ratingValue": "{rating_value}",
+  "ratingCount": "{rating_count}"
+}

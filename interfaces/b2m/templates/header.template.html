@@ -1,0 +1,289 @@
+<!--##########
+main
+##########-->
+
+<header>
+  <nav id="top-menu">
+    <div class="container">
+      <section class="header--top-menu">
+        {__header_top_menu_mobile}
+        <div class="header--top-menu--links">
+          <ul>
+            {__list_header_top_menu_li}
+          </ul>
+        </div>
+        <div class="header--top-menu--email">
+          <a href="mailto:{main_email}">{main_email}</a>
+        </div>
+        <div class="header--top-menu--contacts">
+          <div class="main-phone expandable">
+            <div class="phone">{main_phone}</div>
+              <div class="header--top-menu--contacts--dropdown">
+                <div class="phones">
+                  <div class="phone-block top-phone">
+                    <a class="phone" href="tel:{main_phone_call}">{main_phone}</a>
+                    <div class="phone-block--description">{main_phone_name}</div>
+                  </div>
+                  {__list_second_phone}
+                </div>
+                <a href="{contacts_url}" class="main-button">{contacts_name}</a>
+                <div class="header--top-menu--contacts--dropdown--additional-contacts">
+                  {__list_contacts_li}
+                </div>
+                {__social_icons}
+              </div>
+            </div>
+        </div>
+      </section>
+    </div>
+  </nav>
+  <div class="container" id="header-main">
+    <section class="header--main">
+      <button class="transparent-button" id="mobile-menu" aria-label="Открыть меню">
+        <i class="fa-solid fa-bars-staggered"></i>
+      </button>
+      <div class="header--main--logo">
+        <a href ="/">
+          <picture>
+            <source media="(max-width: 600px)" srcset="{small_logo_url}">
+            <img src="{logo_url}" alt="{store_name}">
+          </picture>
+          <picture class="__white-logo">
+            <source media="(max-width: 600px)" srcset="{small_logo_url_white}">
+            <img src="{logo_url_white}" alt="{store_name}">
+          </picture>
+        </a>
+      </div>
+      <div class="header--main--catalog">
+        <nav id="catalog">
+          <div class="header--main--catalog--menu">
+            <button class="main-button" id="main-catalog-button">
+              <i class="fa-solid fa-cubes-stacked"></i>
+              <span>{catalog_name_button}</span>
+            </button>
+          </div>
+        </nav>
+        <form class="header--main--catalog--search">
+          <div class="header--main--catalog--search--block">
+            <input type="text" id="catalog-search" name="search" placeholder="{search_placeholder}">
+            <button type="button" class="__clear" aria-label="Очистить поиск">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <button type="submit" class="__submit" aria-label="Найти товары">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+          </div>
+          <div class="header--main--catalog--search--dropdown">
+            <div class="---search-content __suggestions-mode">
+              <div class="---search-suggestions __active">
+                <ul>
+                  {__list_search_suggestions}
+                </ul>
+              </div>
+            </div>
+            <div class="---search-content--footer">
+              <button type="submit" class="---search-content--footer--results outline-button">Посмотреть все</button>
+            </div>
+          </div>
+        </form>
+      </div>
+      {__extended_quick_block}
+      <div class="header--main--actions">
+        <div class="header--main--actions--search">
+          <button type="button" aria-label="Поиск">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+        </div>
+        <div class="header--main--actions--contacts">
+          <button type="button" aria-label="Контакты">
+            <i class="fa-solid fa-phone"></i>
+          </button>
+        </div>
+        <div class="header--main--actions--user {account_active}">
+          <button type="button" data-link="{account_link}" aria-label="{account_name}">
+            <i class="fa-solid fa-user"></i>
+            <span>{account_name}</span>
+          </button>
+        </div>
+        <div class="header--main--actions--favorites">
+          <button type="button" aria-label="{favorites_name}">
+            <i class="fa-solid fa-heart"></i>
+            <span>{favorites_name}</span>
+          </button>
+        </div>
+        {__comparison}
+        <div class="header--main--actions--basket">
+          <button type="button" aria-label="Корзина">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <span>Корзина</span>
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
+  <nav id="quick">
+    <div class="container">
+      <section class="header--quick">
+        <ul>
+          {__list_quick_li}
+        </ul>
+      </section>
+    </div>
+  </nav>
+
+  <section class="mobile-search-panel">
+    <div class="mobile-search-panel--fixed">
+      <div class="mobile-search-panel--fixed--search--block">
+        <input type="text" id="mobile-search-panel-input" name="search" placeholder="{search_placeholder}" inputmode="search" autocomplete="off" autocapitalize="off" autocorrect="off">
+        <button type="button" class="__clear" aria-label="Очистить поиск">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <button type="submit" class="__submit" aria-label="Найти товары">
+          <i class="fa-solid fa-arrow-right-long"></i>
+        </button>
+      </div>
+    </div>
+    <div class="mobile-search-panel--results">
+    
+    </div>
+  </section>
+
+</header>
+
+<!--##########
+__header_top_menu_mobile
+##########-->
+
+<div class="header--top-menu--mobile-catalog">
+  <ul>
+    <li>
+      <div class="header--top-menu--mobile-catalog--main-menu">
+        <div class="header--top-menu--mobile-catalog--main-menu--root">{catalog_name}</div>
+      </div>
+    </li>
+    {__list_header_top_menu_mobile_li}
+  </ul>
+</div>
+
+<!--##########
+__list_header_top_menu_mobile_li
+##########-->
+
+<li>
+  <a href="{mobile_menu_li_link}">{mobile_menu_li_name}</a>
+</li>
+
+<!--##########
+__list_header_top_menu_li
+##########-->
+
+<li class="{expandable} {submenu}">
+  <a {header_top_menu_link}>{header_top_menu_name}</a>
+  {__header_top_menu_dropdown}
+</li>
+
+<!--##########
+__header_top_menu_dropdown
+##########-->
+
+<div class="{header_top_menu_dropdown_submenu}">
+  <ul>
+    {__list_header_top_menu_li}
+  </ul>
+</div>
+
+<!--##########
+__list_second_phone
+##########-->
+
+<div class="phone-block">
+  <a class="phone" href="tel:{second_phone_call}">{second_phone}</a>
+  <div class="phone-block--description">{second_phone_name}</div>
+</div>
+
+<!--##########
+__list_contacts_li
+##########-->
+
+<div class="contact-item">
+  {__contacts_li_title}
+  {__contacts_li_a}
+  {__contacts_li_text}
+</div>
+
+<!--##########
+__contacts_li_title
+##########-->
+
+<div class="contact-item--title">{contacts_li_title}</div>
+
+<!--##########
+__contacts_li_a
+##########-->
+
+<a href="{contacts_li_a_link}">{contacts_li_a_link}</a>
+
+<!--##########
+__contacts_li_text
+##########-->
+
+<div class="contact-item--text">{contacts_li_text}</div>
+
+<!--##########
+__social_icons
+##########-->
+
+<div class="header--top-menu--contacts--dropdown--social-icons">
+  <ul>
+    {__list_icons_li}
+  </ul>
+</div>
+
+<!--##########
+__list_icons_li
+##########-->
+
+<li><a href="{icon_link}" aria-label="Мы в соцсетях">{__social_icon_i}{__social_icon_img}</a></li>
+
+<!--##########
+__social_icon_i
+##########-->
+
+<!--<i style="color:{icon_color}" class="fa-brands {icon_fa_key}"></i>-->
+
+<!--##########
+__social_icon_img
+##########-->
+
+<img src="{social_icon_img_src}" alt="">
+
+<!--##########
+__list_search_suggestions
+##########-->
+
+<li><a href="{search_suggestion_url}">{search_suggestion}</a></li>
+
+<!--##########
+__comparison
+##########-->
+
+<div class="header--main--actions--comparison">
+  <button type="button" data-link="{comparison_link}" aria-label="{comparison_name}">
+    <i class="fa-solid fa-lightbulb"></i>
+    <span>{comparison_name}</span>
+  </button>
+</div>
+
+<!--##########
+__list_quick_li
+##########-->
+
+<li class="{quick_marked}"><a href="{quick_link}">{quick_name}</a></li>
+
+<!--##########
+__extended_quick_block
+##########-->
+
+<div class="header--main--extended-quick">
+  <a href="{extended_quick_link}">{extended_quick_name}</a>
+</div>

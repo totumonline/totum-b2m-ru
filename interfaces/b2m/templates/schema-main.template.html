@@ -1,0 +1,50 @@
+<!--##########
+main
+##########-->
+
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "{organisation_host}#organization",
+  "name": "{site_name}",
+  "legalName": "{legal_name}",
+  "url": "{organisation_host}",
+  "logo": "{logo_url}",
+  "email": "{organisation_email}",
+  "telephone": "{organisation_phone}"
+  {__legal_address}
+  {__contact_point}
+}
+
+<!--##########
+__legal_address
+##########-->
+,
+"address": {
+  "@type": "PostalAddress",
+  "streetAddress": "{legal_address}",
+  "addressLocality": "{legal_city}",
+  "addressRegion": "{legal_region}",
+  "postalCode": "{legal_postal_code}",
+  "addressCountry": "{legal_country_code}"
+}
+
+<!--##########
+__contact_point
+##########-->
+
+,
+"contactPoint": [
+{__list_contact_points}
+]
+
+<!--##########
+__list_contact_points
+##########-->
+
+{
+  "@type": "ContactPoint",
+  "telephone": "{contact_phone}",
+  "contactType": "{contact_type}",
+  "availableLanguage": {contact_langs}
+}

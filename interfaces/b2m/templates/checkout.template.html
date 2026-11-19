@@ -1,0 +1,387 @@
+<!--##########
+main
+##########-->
+
+<section class="short--header">
+  <button class="short--header--go-back" type="button" aria-label="Вернуться на предыдущую страницу"></button>
+  <div class="short--header--logo">
+    <a href="/">
+      <picture>
+        <source media="(max-width: 600px)" srcset="{logo_small}">
+        <img src="{logo_big}" alt="Bitum">
+      </picture>
+    </a>
+  </div>
+  <button class="short--header--close" type="button" aria-label="Вернуться на главную страницу"></button>
+</section>
+
+<section class="checkout {checkout_type}" data-time-valid="{data_time_valid}">
+  <div class="narrow-container">
+    <div class="checkout--summary--block">
+      <div class="checkout--params">
+        <div class="checkout--params--title">{checkout_title}</div>
+        <div class="checkout--params--promocode--block {promo_hidden}">
+          <div class="checkout--params--promocode">{applied_promo}</div>
+          <div class="checkout--params--promocode--alert {promo_alert_active}"><i class="fa-solid fa-head-side-cough"></i><div>{promo_alert_text}</div></div>
+        </div>
+        <div class="checkout--params--steps--block">
+          <div class="---steps">
+            <section class="---steps--delivery {account_order_filled}">
+              <div class="---steps--delivery--title">{delivery_title}</div>
+              <div class="---steps--delivery--items" data-summary-products="{data_summary_products}" data-summary-all-discount="{data_summary_all_discount}" data-summary-points="{data_summary_points}" data-summary-canbepayd="{data_summary_canbepayd}" data-delivery-inside="{data_delivery_inside}" data-fee-inside="{data_fee_inside}" data-order-delivery-cost="{data_order_delivery_cost}" data-order-payment-fee="{data_order_payment_fee}">
+                <div class="---steps--delivery--items--block">
+                  {__list_items_in_order}
+                </div>
+              </div>
+              <div class="---shipping-methods">
+                <div class="---shipping-methods--city" data-city-id="{data_city_id}">
+                  <div class="---shipping-methods--city--selected--block">
+                    <div class="---shipping-methods--city--selected">{city_name}</div>
+                    <div class="---shipping-methods--city--region">{city_region}</div>
+                  </div>
+                  <button class="---shipping-methods--select-city" aria-label="Выбрать город доставки"><i class="fa-solid fa-arrow-right-to-city"></i></button>
+                </div>
+                <div class="---shipping-methods--results __collapsed {get_methods_async}">
+                  <ul>
+                    {__list_shipping_methods}
+                  </ul>
+                </div>
+                <div class="---shipping-methods--more">
+                  <a href="#">Изменить способ доставки</a>
+                </div>
+              </div>
+              <div class="---steps--delivery--address">
+                <div class="---steps--delivery--address--title-addresses--block">
+                  <div class="---steps--delivery--address--title">Адрес доставки</div>
+                  <div class="---steps--delivery--address--customer-addresses">
+                    <ul>
+                      {__list_customer_addresses}
+                    </ul>
+                  </div>
+                  <div class="---steps--delivery--address--more">
+                    <a href="#">Показать сохранённые адреса</a>
+                  </div>
+                </div>
+                <div class="---checkout-input--block __required" id="street-and-building">
+                  <i class="fa-solid fa-asterisk"></i>
+                  <input type="text" placeholder="Улица и дом" autocomplete="off" value="{street_and_building}" maxlength="300">
+                  <button type="button" class="__clear" tabindex="-1" aria-label="Очистить поле «Улица и дом»"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="---checkout-input--block __required" id="unit">
+                  <i class="fa-solid fa-asterisk"></i>
+                  <input type="text" placeholder="Кв./офис" autocomplete="off" value="{unit}" maxlength="300">
+                  <button type="button" class="__clear" tabindex="-1" aria-label="Очистить поле «Кв./офис»"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="---checkout-input--block" id="entrance">
+                  <input type="text" placeholder="Подъезд" autocomplete="off" value="{entrance}" maxlength="300">
+                  <button type="button" class="__clear" tabindex="-1" aria-label="Очистить поле «Подъезд»"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="---checkout-input--block" id="intercom">
+                  <input type="text" placeholder="Домофон" autocomplete="off" value="{intercom}" maxlength="300">
+                  <button type="button" class="__clear" tabindex="-1" aria-label="Очистить поле «Домофон»"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="---checkout-input--block" id="floor">
+                  <input type="text" placeholder="Этаж" autocomplete="off" value="{floor}" maxlength="300">
+                  <button type="button" class="__clear" tabindex="-1" aria-label="Очистить поле «Этаж»"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="---checkout-input--block" id="comment">
+                  <input type="text" placeholder="Комментарий к заказу" autocomplete="off" value="{comment}" maxlength="300">
+                  <button type="button" class="__clear" tabindex="-1" aria-label="Очистить поле «Комментарий к заказу»"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+              </div>
+
+              <div class="---steps--delivery--date">
+                <div class="---steps--delivery--date--title">Дата доставки</div>
+                  <div class="---steps--delivery--date--day">
+                    <ul>
+                    </ul>
+                  </div>
+                  <div class="---steps--delivery--date--time">
+                    <ul>
+                    </ul>
+                  </div>
+                <div class="---steps--delivery--date--description"></div>
+              </div>
+              
+              <div class="---steps--delivery--pickup-point" data-pickup-point-id="">
+                <div class="---steps--delivery--pickup-point--title"></div>
+                <div class="---steps--delivery--pickup-point--text"></div>
+                <button class="---steps--delivery--pickup-point--select-point outline-button" aria-label="Выбор пункта выдачи"></button>
+              </div>
+            </section>
+
+            <section class="---steps--customer {account_order_filled}">
+              <div class="---steps--customer--title">Покупатель</div>
+              <div class="---steps--customer--selector">
+                <button class="---steps--customer--selector--button {customer_pers_active}" data-customer="user" type="button">Физическое лицо</button>
+                <button class="---steps--customer--selector--button {customer_comp_active}" data-customer="company" type="button">Юридическое лицо</button>
+              </div>
+              <div class="---steps--customer--user __active">
+                <div class="---checkout-input--block __required" id="customer-name">
+                  <i class="fa-solid fa-asterisk"></i>
+                  <input type="text" placeholder="Имя" autocomplete="name" value="{customer_name}" maxlength="300">
+                  <button type="button" class="__clear" tabindex="-1" aria-label="Очистить поле «Имя»"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="---checkout-input--block __required {customer_email_class_block}" {readonly} id="customer-email">
+                  <i class="fa-solid fa-asterisk"></i>
+                  <input type="email" placeholder="Email" autocomplete="email" value="{customer_email}" maxlength="300">
+                  <button type="button" class="__clear" tabindex="-1" aria-label="Очистить поле «Email»"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="---checkout-input--block __required" id="customer-phone">
+                  <i class="fa-solid fa-asterisk"></i>
+                  <input type="tel" placeholder="Телефон" autocomplete="tel" value="{customer_tel}" maxlength="300">
+                  <button type="button" class="__clear" tabindex="-1" aria-label="Очистить поле «Телефон»"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+              </div>
+              <div class="---steps--customer--company">
+                <div class="---checkout-input--block __required" id="company-name">
+                  <i class="fa-solid fa-asterisk"></i>
+                  <input type="text" placeholder="Название компании" autocomplete="organization" value="{company_name}" maxlength="300">
+                  <button type="button" class="__clear" tabindex="-1" aria-label="Очистить поле «Название компании»"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="---checkout-input--block __required" id="company-taxid">
+                  <i class="fa-solid fa-asterisk"></i>
+                  <input type="text" placeholder="ИНН" autocomplete="off" value="{company_taxid}" maxlength="300">
+                  <button type="button" class="__clear" tabindex="-1" aria-label="Очистить поле «ИНН»"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+              </div>
+            </section>
+
+            <section class="---steps--payment {account_order_filled}">
+              <div class="---steps--payment--title">Способ оплаты</div>
+              <div class="---steps--payment--methods">
+                <ul>
+                  {__list_payment_methods}
+                </ul>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+      <div class="summary--block">
+        <div class="summary">
+          <div class="summary--title">Итого</div>
+          <div class="summary--cart-rows">
+            <ul>
+                <li id="summary-products">
+                  <div class="summary--row--label">Стоимость продуктов</div>
+                  <div class="summary--row--dots"></div>
+                  <div class="summary--row--value"></div>
+                </li>
+                <li id="summary-all-discount">
+                  <div class="summary--row--label">Скидка на товары</div>
+                  <div class="summary--row--dots"></div>
+                  <div class="summary--row--value"></div>
+                </li>
+                <li id="summary-pay-by-points">
+                  <div class="summary--row--label">Оплата баллами</div>
+                  <div class="summary--row--dots"></div>
+                  <div class="summary--row--value"></div>
+                </li>
+                <li id="summary-delivery">
+                  <div class="summary--row--label">Доставка</div>
+                  <div class="summary--row--dots"></div>
+                  <div class="summary--row--value"></div>
+                </li>
+                <li id="summary-payment-fee">
+                  <div class="summary--row--label">Платежная комиссия</div>
+                  <div class="summary--row--dots"></div>
+                  <div class="summary--row--value"></div>
+                </li>
+            </ul>
+          </div>
+          <div class="summary--pay-by-points">
+            <div class="summary--pay-by-points--text"></div>
+            <div class="---checkout-input--block">
+              <input type="text" inputmode="numeric" placeholder="Сколько оплатить баллами" autocomplete="off" maxlength="12" value="{points_payment_value}">
+              <button type="button" class="__clear" tabindex="-1" aria-label="Очистить поле «Сколько оплатить баллами»"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+          <div class="summary--total __hidden">
+            <div class="summary--total--label">итого</div>
+            <div class="summary--total--value"></div>
+          </div>
+          <div class="summary--points __hidden"></div>
+          <div class="summary--selected">
+            <div class="summary--selected--delivery">Доставка: <span></span></div>
+            <div class="summary--selected--payment">Оплата: <span></span></div>
+          </div>
+          <button class="summary--checkout main-button __blocked" type="button">{checkout_button_text}</button>
+          <div class="summary--info"><i class="fa-solid fa-head-side-cough"></i></div>
+          <div class="summary--timer __hidden"><i class="fa-solid fa-hourglass-end"></i><div>Пожалуйста, закончите оформление заказа за <b class="summary--timer--value"></b></div></div>
+          <div class="summary--terms">
+            <ul>
+              {__list_terms}
+            </ul>
+          </div>
+          {__summary_payment}
+          {__summary_delivery}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--##########
+__list_items_in_order
+##########-->
+
+<article class="---checkout-item" data-item-id="{data_item_id}" data-on-request="{data_on_request}" data-sha="{data_sha}">
+  <div class="---checkout-item--image-info--block">
+    <div class="---checkout-item--image">
+      <img src="{product_image}" alt="{product_alt}">
+      <div class="---checkout-item--promo {promo_item_active} {zero_d}">{promo_text}</div>
+    </div>
+    <a href="{item_link}">
+      <div class="---checkout-item--info">
+        <div class="---checkout-item--info--one-word">{one_word}</div>
+        <div class="---checkout-item--info--name">{product_name}</div>
+        <div class="---checkout-item--info--sku">{product_sku}</div>
+        <div class="---checkout-item--info--option">
+          <ul>
+            {__list_product_options}
+          </ul>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="---checkout-item--price--block">
+    <div class="---quantity--checkout-amount">{quantity}</div>
+    <div class="---checkout-item--old-price--block">
+      <div class="---checkout-item--discount {discount_hidden}">{discount_value}</div>
+      <div class="---checkout-item--old-price {oldprice_hidden}">{old_price}</div>
+    </div>
+    <div class="---checkout-item--price-points--block">
+      <div class="---checkout-item--price-points--values--block">
+        <div class="---checkout-item--price {price_on_request}">{calculated_price}</div>
+        <div class="---checkout-item--points {points_hidden}">{item_points}</div>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!--##########
+__list_product_options
+##########-->
+
+<li><div class="---checkout-item--info--option--title" data-option-values="{data_option_values}">{option_title}</div><div>{option_value}</div></li>
+
+<!--##########
+__list_shipping_methods
+##########-->
+
+<li class="{shipping_method_checked}" data-delivery-id="{data_delivery_id}" data-delivery-address="{data_delivery_address}" data-delivery-date="{data_delivery_date}" data-delivery-time="{data_delivery_time}" data-delivery-pickup-point="{data_delivery_pickup_point}" data-manager-verification="{data_manager_verification}" data-verification-button-text="{data_verification_button_text}">
+  <div class="---shipping-methods--results--name-comment--block">
+    <div class="---shipping-methods--results--name">{shipping_method_name}</div>
+    <div class="---shipping-methods--results--comment">{shipping_method_comment}</div>
+  </div>
+  <div class="---shipping-methods--results--block">
+    <div class="---shipping-methods--results--price {free_class} {null_price_class}">{shipping_method_price}</div>
+    <div class="---shipping-methods--results--time-date--block {aprox_time_hidden}">
+      <div class="---shipping-methods--results--time">{shipping_method_time_days}</div>
+      <div class="---shipping-methods--results--date">{shipping_method_aprox_date}</div>
+    </div>
+  </div>
+</li>
+
+<!--##########
+__list_delivery_dates
+##########-->
+
+<li class="__checked" data-date="{data_delivery_date_ymd}">
+  <div class="---day--d-M">{data_delivery_date_text}</div>
+  <div class="---day--D">{data_delivery_week_day}</div>
+</li>
+
+<!--##########
+__list_delivery_date_time
+##########-->
+
+<li class="__checked" data-time-interval-id=""></li>
+
+<!--##########
+__list_payment_methods
+##########-->
+
+<li class="{payment_method_checked}" data-payment-id="{data_payment_id}" data-transaction-cost="{data_transaction_cost}" data-button-text="{data_button_text}">
+  <div class="---payment--method--name--block">
+    <div class="---payment--method--name">{payment_method_name}</div>
+    <div class="---payment--method--description">{payment_method_description}</div>
+  </div>
+  {__payment_method_img}
+</li>
+
+<!--##########
+__payment_method_img
+##########-->
+
+<div class="---payment--method--image">
+  <img src="{payment_method_img_url}" alt="{payment_method_img_alt}">
+</div>
+
+<!--##########
+__list_terms
+##########-->
+
+<li class="{term_checked} {term_required}" data-agreement-id="{term_id}"><i class="fa-solid fa-asterisk"></i><div class="summary--terms--term">{term_string}</div></li>
+
+<!--##########
+__list_customer_addresses
+##########-->
+
+<li class="---customer-address">
+  <div class="---customer-address--street--block">
+    <div class="---customer-address--street">{address_street}</div>
+    {__list_addresses_more}
+  </div>
+  <div class="---customer-address--comment {comment_hidden}">{address_comment}</div>
+</li>
+
+<!--##########
+__list_addresses_more
+##########-->
+
+<div class="---customer-address--more {more_hidden} {more_marker}" data-value="{data_more_value}">{more_text}</div>
+
+<!--##########
+__summary_payment
+##########-->
+
+<div class="summary--payment">
+  <div class="summary--payment--status">{payment_status}</div>
+  <div class="summary--payment--debt {payment_debt_hidden}">{payment_debt}</div>
+  <div class="summary--payment--text {payment_text_hidden}">{payment_text}</div>
+  <div class="summary--payment--list--block {payment_list_hidden}">
+    <ul>
+      {__list_payments}
+    </ul>
+  </div>
+  <button class="summary--payment--button main-button {payment_button_active} {fully_paid}" type="button" data-link="{data_link}" data-file="{data_file}">{button_text}</button>
+</div>
+
+<!--##########
+__summary_delivery
+##########-->
+
+<div class="summary--delivery-info">
+  <div class="summary--delivery-info--title">Доставки</div>
+  <div class="summary--delivery-info--text {delivery_text_hidden}">{delivery_text}</div>
+  <div class="summary--delivery-info--list--block {delivery_list_hidden}">
+    <ul>
+      {__list_deliveries}
+    </ul>
+  </div>
+  <div class="summary--delivery-info--zero {delivery_zero_hidden}">Пока нет информации о доставках по этому заказу</div>
+</div>
+
+<!--##########
+__list_payments
+##########-->
+
+<li><div class="---payment-date" data-full-text="{payment_date}"><div class="---payment-date--text">{payment_date}</div></div><div class="---payment-method" data-full-text="{payment_method}"><div class="---payment-method--text">{payment_method}</div></div><div class="---payment-sum" data-full-text="{payment_sum}"><div class="---payment-sum--text">{payment_sum}</div></div><div class="---payment-status" data-full-text="{payment_status}"><div class="---payment-status--text">{payment_status}</div></div></li>
+
+<!--##########
+__list_deliveries
+##########-->
+
+<li><div class="---delivery-method" data-full-text="{delivery_method}"><div class="---delivery-method--text">{delivery_method}</div></div><div class="---delivery-link"><div class="---delivery-link--text">{delivery_link}</div><button class="---delivery-link--copy" type="button" aria-label="Скопировать ссылку на доставку"></button></div><div class="---delivery-estimated-date" data-full-text="{delivery_estimated_date}"><div class="---delivery-estimated-date--text">{delivery_estimated_date}</div></div><div class="---delivery-status" data-full-text="{delivery_status}"><div class="---delivery-status--text">{delivery_status}</div></div></li>

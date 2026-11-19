@@ -1,0 +1,46 @@
+<div class="mobile-right-panel--header">
+  <button class="mobile-right-panel--header--title" type="button" aria-label="Закрыть: Рассылка">Рассылка</button>
+  <button class="mobile-right-panel--close" type="button" aria-label="Закрыть"></button>
+</div>
+
+<div class="mobile-right-panel--content" id="subscribe-content">
+  <div class="mobile-right-panel--message" id="subscribe-message"></div>
+
+  <div class="mobile-right-panel--done">
+    <i class="fa-solid fa-circle-check"></i>
+  </div>
+
+  <div class="mobile-right-panel--input--block">
+    <div class="mobile-right-panel--input--title">Email</div>
+    <div class="mobile-right-panel--input __required">
+      <i class="fa-solid fa-asterisk"></i>
+      <input type="email" id="subscribe-email" placeholder="Укажите email" autocomplete="email" maxlength="300" required>
+    </div>
+    <div class="mobile-right-panel--input--description">Введите ваш email — мы будем отправлять на него интересную информацию и данные ваших заказов.</div>
+    <div class="mobile-right-panel--input--description">Вы в любой момент сможете отказаться от рассылки через настройки на сайте или по ссылке в отправляемых письмах.</div>
+  </div>
+
+  <div class="mobile-right-panel--toggle--block">
+    <div class="mobile-right-panel--toggle--title">Настройки email</div>
+    <div class="mobile-right-panel--toggle" id="subscribe-notifications">
+      <div class="mobile-right-panel--toggle--track">
+        <div class="mobile-right-panel--toggle--slider"></div>
+      </div>
+      <div class="mobile-right-panel--toggle--label">Получать нотификации о заказах и технические сообщения</div>
+    </div>
+    <div class="mobile-right-panel--toggle" id="subscribe-newsletter">
+      <div class="mobile-right-panel--toggle--track">
+        <div class="mobile-right-panel--toggle--slider"></div>
+      </div>
+      <div class="mobile-right-panel--toggle--label">Получать рассылку</div>
+    </div>
+  </div>
+</div>
+
+<div style="height: 100px; width: 100%" class="smart-captcha" data-sitekey="{yandex_capcha_public_key}"></div>
+
+<div class="mobile-right-panel--accept-cansel--block">
+  <button class="mobile-right-panel--cansel" type="button" aria-label="Отменить">Отменить</button>
+  <button class="mobile-right-panel--accept" type="button" aria-label="Применить">Применить</button>
+  <button class="mobile-right-panel--close-button outline-button" type="button" aria-label="Закрыть">Закрыть</button>
+</div>

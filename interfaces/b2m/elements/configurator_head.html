@@ -1,0 +1,164 @@
+<!-- CONFIGURATOR -->
+
+<script>
+  var configuratorBodyClasses = [
+    '__spv', '__p323', '__pgap', '__wide-image',
+    '__psmall', '__pmedium', '__plarge',
+    '__plimit4', '__plimit5', '__plimit6', '__plimit7', '__plimit8', '__plimit9', '__plimit10', '__plimit11', '__plimit12',
+    '__desktop-mobile-menu', '__without_catalog', '__without-search', '__center-logo',
+    '__hide-filters', '__show-ext-quick', '__all-wide', '__short-banners'
+  ];
+</script>
+
+<script>
+  (function() {
+    var confParam = new URLSearchParams(location.search).get('conf');
+    if (confParam === 'true' || confParam === 'false') localStorage.setItem('conf', confParam);
+    if (localStorage.getItem('conf') !== 'true') return;
+
+    var configuratorDefaults = {
+      configurator_color_scheme_final: 'main-color:#1b263b,red-color:#b03a2e,black-button-color:#000000,green-color:#7e9a84,yellow-color:#f5c469,greenyellow-color:#abc200,tint-color:#fcfcff,secondary-color:#f1f2f9,li-background-hover:#f0f2f4,category-block-background:#fcfcff',
+      configurator_base_font: 'Inter',
+      configurator_heading_font: 'Inter',
+      configurator_font_size: '0px',
+      configurator_font_weight: '-25',
+      configurator_title_font_size: '0px',
+      configurator_title_font_weight: '-25',
+      configurator_cards_per_row_list: 'items-in-row-1:1px,items-in-row-2:1px,items-in-row-3:1px,items-in-row-4:1px,items-in-row-5:1px,item-size-correction:0px',
+      configurator_aspect_ratio: '1.2',
+      configurator_border_radius_final: 'big-image-radius:12,medium-image-radius:8,small-image-radius:6,extra-small-image-radius:4,extra-big-additional-elements:20,big-additional-elements:12,medium-additional-elements:8,additional-elements:6,small-additional-elements:4,button-radius:6,input-radius:6,dropdown-radius:12',
+      configurator_banner_max_width: 'banner-max-width:100vw,banner-border-radius:0,banner-padding:0 0 0 0',
+      configurator_banner_height: '100vh',
+      configurator_hide_header: 'true',
+      configurator_site_width: '1800px',
+      configurator_standart_image_position: 'center',
+      configurator_product_aspect_ratio: '1.2',
+      configurator_wide_type: 'calc(0.72 + (var(--aspect-ratio) - 1.3) / 2)',
+      configurator_auto_wide: '4',
+      configurator_item_name_type_values: 'item-name-font-family:var(--title-font),item-name-font-weight:calc(var(--font-weight-500) + var(--title-font-weight-adjustment)),item-name-font-size:calc(1rem + var(--title-size-adjustment))',
+      configurator_item_name_size_adjustment: '0px',
+      configurator_scroller_items: '0px',
+      configurator_border_width: '1px',
+      configurator_hide_delimeter: 'true',
+      configurator_block_mouse_hover_scroll: 'false',
+      configurator_shadows_values: '--button-shadow:1px 1px 1px 0px #c9d1dc,--button-shadow-light:1px 1px 1px 0px #e1e8f0,--dropdown-box-shadow:0 4px 12px #0000001a,--small-shadow:0 2px 4px #00000033,--left-panel-shadow:2px 12px 12px #00000033,--right-panel-shadow:-2px 12px 12px #00000033,--scroller-shadow:0 0px 20px #00000060, 0 0px 40px #00000023,--sticky-menu-shadow:0 2px 10px #00000003,--slider-shadow:1px 1px 3px #00000066,--extra-small-shadow:1px 1px 1px 0px #0000001c,--poster-shadow:2px 3px 15px 0px #00000057, 1px 1px 4px 0px #00000012,--float-button-shadow:0 4px 12px #0000000f',
+      configurator_header_settings_params: '',
+      configurator_hide_filters: 'false',
+      configurator_quick_extended: 'true',
+      configurator_wide_on_mobile: 'false',
+      configurator_expand_banners: 'true',
+      configurator_product_main_image: 'medium',
+      configurator_special_product_view: 'false',
+      configurator_special_product_323: 'false',
+      configurator_special_product_wide: 'false',
+      configurator_special_product_gap: 'true',
+      configurator_special_product_limit: '7'
+    };
+
+    function val(key) {
+      var value = localStorage.getItem(key);
+      return value === null ? configuratorDefaults[key] : value;
+    }
+
+    function addStyle(id, css) {
+      var style = document.getElementById(id);
+      if (!style) {
+        style = document.createElement('style');
+        style.id = id;
+        (document.body || document.head).appendChild(style);
+      }
+      style.textContent = css;
+    }
+
+    function varsFromList(list, separator, prefix, suffix) {
+      var css = ':root{';
+      list.split(separator).forEach(function(pair) {
+        var idx = pair.indexOf(':');
+        if (idx > 0) css += prefix + pair.substring(0, idx).trim() + ':' + pair.substring(idx + 1) + suffix + ';';
+      });
+      return css + '}';
+    }
+
+    function applyStyles() {
+      addStyle('configurator-colors', varsFromList(val('configurator_color_scheme_final'), ',', '--', ''));
+      addStyle('configurator-base-font', ":root{--font-text:'" + val('configurator_base_font') + "';}");
+      addStyle('configurator-heading-font', ":root{--font-title:'" + val('configurator_heading_font') + "';}");
+      addStyle('configurator-fonts', ':root{--size-adjustment:' + val('configurator_font_size') + ';--font-weight-adjustment:' + val('configurator_font_weight') + ';--title-size-adjustment:' + val('configurator_title_font_size') + ';--title-font-weight-adjustment:' + val('configurator_title_font_weight') + ';}');
+      addStyle('configurator-cards-per-row', varsFromList(val('configurator_cards_per_row_list'), ',', '--', ''));
+      addStyle('configurator-aspect-ratio', ':root{--aspect-ratio:' + val('configurator_aspect_ratio') + ';}');
+      addStyle('configurator-radiuses', varsFromList(val('configurator_border_radius_final'), ',', '--', 'px'));
+      addStyle('configurator-banner-max-width', varsFromList(val('configurator_banner_max_width'), ',', '--', ''));
+      addStyle('configurator-banner-height', ':root{--banner-height:' + val('configurator_banner_height') + ';}');
+      addStyle('configurator-hide-header', ':root{--hide-header:' + val('configurator_hide_header') + ';}');
+      addStyle('configurator-site-width', ':root{--site-width:' + val('configurator_site_width') + ';}');
+      addStyle('configurator-standart-image-position', ':root{--standart-image-position:' + val('configurator_standart_image_position') + ';}');
+      addStyle('configurator-product-aspect-ratio', ':root{--product-aspect-ratio:' + val('configurator_product_aspect_ratio') + ';}');
+      addStyle('configurator-wide-type', ':root{--wide-aspect-ratio:' + val('configurator_wide_type') + ';}');
+      addStyle('configurator-auto-wide', ':root{--auto-wide-items:' + val('configurator_auto_wide') + ';}');
+      addStyle('configurator-item-name-type', varsFromList(val('configurator_item_name_type_values'), ',', '--', ''));
+      addStyle('configurator-item-name-size-adjustment', ':root{--item-name-size-adjustment:' + val('configurator_item_name_size_adjustment') + ';}');
+      addStyle('configurator-scroller-items', ':root{--scroller-item-adjustment:' + val('configurator_scroller_items') + ';}');
+      addStyle('configurator-border-width', ':root{--border-width:' + val('configurator_border_width') + ';}');
+      addStyle('configurator-hide-delimeter', ':root{--hide-delimeter:' + (val('configurator_hide_delimeter') === 'true' ? 'none' : 'var(--delimiter-solid)') + ';}');
+      addStyle('configurator-block-mouse-hover-scroll', ':root{--block-mouse-hover-scroll:' + val('configurator_block_mouse_hover_scroll') + ';}');
+      addStyle('configurator-shadows', varsFromList(val('configurator_shadows_values'), /[;,](?=\s*--)/, '', ''));
+    }
+
+    function applyBodyClasses() {
+      if (!document.body) return;
+      document.body.classList.remove.apply(document.body.classList, configuratorBodyClasses);
+      var productMainImage = val('configurator_product_main_image');
+      if (productMainImage) document.body.classList.add('__p' + productMainImage);
+      if (val('configurator_special_product_view') === 'true') {
+        document.body.classList.add('__spv');
+        if (val('configurator_special_product_323') === 'true') document.body.classList.add('__p323');
+        if (val('configurator_special_product_wide') === 'true') document.body.classList.add('__wide-image');
+        if (val('configurator_special_product_gap') === 'true') document.body.classList.add('__pgap');
+        var plimit = val('configurator_special_product_limit');
+        if (plimit) document.body.classList.add('__plimit' + plimit);
+      }
+      var headerParams = val('configurator_header_settings_params');
+      if (headerParams) {
+        headerParams.split(',').forEach(function(cls) {
+          if (cls) document.body.classList.add('__' + cls);
+        });
+      }
+      if (val('configurator_hide_filters') === 'true') document.body.classList.add('__hide-filters');
+      if (val('configurator_quick_extended') === 'true') document.body.classList.add('__show-ext-quick');
+      if (val('configurator_wide_on_mobile') === 'true') document.body.classList.add('__all-wide');
+      if (val('configurator_expand_banners') === 'false') document.body.classList.add('__short-banners');
+    }
+
+    window.applyConfiguratorStyles = function() {
+      applyStyles();
+      applyBodyClasses();
+    };
+
+    applyStyles();
+
+    var bodyObserver = new MutationObserver(function(mutations, obs) {
+      if (!document.body) return;
+      obs.disconnect();
+      applyBodyClasses();
+    });
+    bodyObserver.observe(document.documentElement, { childList: true });
+
+    document.documentElement.classList.add('__conf_loading');
+
+    function moveConfiguratorStylesToEnd() {
+      var styles = document.head.querySelectorAll('style[id^="configurator-"]');
+      for (var i = 0; i < styles.length; i++) {
+        document.body.appendChild(styles[i]);
+      }
+      document.documentElement.classList.remove('__conf_loading');
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', moveConfiguratorStylesToEnd);
+    } else {
+      moveConfiguratorStylesToEnd();
+    }
+  })();
+</script>
+
+<!-- END CONFIGURATOR -->

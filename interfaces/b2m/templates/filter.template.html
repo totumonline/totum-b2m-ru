@@ -1,0 +1,103 @@
+<!--##########
+main
+##########-->
+
+<section class="catalog--filters">
+  <div class="container">
+    <div class="catalog--filters--main">
+      <div class="---all-filtres--block">
+        <button class="---all-filtres" type="button" style="--badge-content: '0';">Фильтры</button>
+        <div class="mobile-panel--filter-data">
+          <ul>
+            {__list_filters}
+          </ul>
+        </div>
+        <div class="mobile-panel--order-by">
+          <ul>
+            <li data-key="1">Сначала дешевые</li>
+            <li data-key="2">Сначала дорогие</li>
+            <li data-key="3" class="__checked">Рекомендация магазина</li>
+            <li data-key="4">По алфавиту А-Я</li>
+            <li data-key="5">По алфавиту Я-А</li>
+          </ul>
+        </div>
+      </div>
+      <button class="---order-by __checked-3" type="button">Сортировать по</button>
+      <div class="catalog--filters--main--counter">{product_count}</div>
+    </div>
+    {__quick_filters}
+  </div>
+</section>
+
+<!--##########
+__list_filters
+##########-->
+
+<!-- используются шаблоны __filter_select __filter_range и __filter_toggle -->
+
+<!--##########
+__filter_select
+##########-->
+
+<li>
+  <button class="---filter" data-filter-id="{filter_key}" data-filter-type="select" data-description="{filter_description}" data-filter-unit="{filter_unit}" type="button">{filter_title}</button>
+  <button class="---filter-clear" type="button" aria-label="Сбросить фильтр"></button>
+  <div class="mobile-panel--filter-data">
+    <ul>
+      {__list_filter_select_data}
+    </ul>
+  </div>
+</li>
+
+<!--##########
+__list_filter_select_data
+##########-->
+
+<li data-key="{key_num}">{filter_value}</li>
+
+<!--##########
+__filter_range
+##########-->
+
+<li>
+  <button class="---filter" data-filter-id="{filter_key}" data-filter-type="range" data-filter-range-min="{range_min}" data-filter-range-max="{range_max}" data-filter-range-type="after" data-filter-range-unit="{filter_unit}" data-description="{filter_description}" type="button">{filter_title}</button>
+  <button class="---filter-clear" type="button" aria-label="Сбросить фильтр"></button>
+  <div class="mobile-panel--filter-data">
+    <div class="---filter-range--from">{range_min}</div>
+    <div class="---filter-range--to">{range_max}</div>
+  </div>
+</li>
+
+<!--##########
+__filter_toggle
+##########-->
+
+<li>
+  <button class="---filter" data-filter-id="{filter_key}" data-filter-type="toggle" data-description="{filter_description}" type="button">{filter_title}</button>
+  <button class="---filter-clear" type="button" aria-label="Сбросить фильтр"></button>
+  <div class="mobile-panel--filter-data">
+    <div>*ALL*</div>
+  </div>
+</li>
+
+<!--##########
+__quick_filters
+##########-->
+
+<div class="catalog--filters--second">
+  <ul>
+    <li class="---filter-clear-all--block __disactivated">
+      <button class="---filter-clear-all" type="button" aria-label="Сбросить все фильтры"><i class="fa-solid fa-xmark"></i></button>
+    </li>
+    {__list_quick_filters}
+  </ul>
+</div>
+
+<!--##########
+__list_quick_filters
+##########-->
+
+<li>
+  <button class="---filter" data-filter-id="{filter_key}" type="button">{filter_title}</button>
+  <button class="---filter-clear" type="button" aria-label="Сбросить фильтр"></button>
+</li>

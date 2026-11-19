@@ -1,0 +1,137 @@
+<!--##########
+main
+##########-->
+
+<main class="page" style="--poster: url({poster_url}); --poster-none: none;" data-video="{video_url}" data-mobile-video="{mobile_video_url}">
+  <div class="page--title-categories--block {poster_class} {white_poster_class}">
+    <section class="page--page-title">
+      <div class="container">
+        <div class="page--page-title-breadcrumbs--block">
+          <button class="page--page-title--back-button" data-back-link="{back_link}" type="button">{back_link_title}</button>
+          <h1>{page_title}</h1>
+          {__nav_breadcrumbs}
+        </div>
+      </div>
+    </section>
+    <div class="loading-video">Загружается видео</div>
+  </div>
+
+  {__page_text}
+  {__selected_elements}
+  {__brands_selector}
+  {__brands_items}
+  {__brands_items_nothing_found}
+  {__more_link}
+
+</main>
+
+<!--##########
+__nav_breadcrumbs
+##########-->
+
+<nav>
+  <div class="breadcrumbs">
+    <ul>
+      {breadcrumbs_li_list}
+    </ul>
+  </div>
+</nav>
+
+<!--##########
+__page_text
+##########-->
+
+<section class="page--main">
+  <div class="container">
+    <div class="site-large-text">
+      {page_text}
+    </div>
+  </div>
+</section>
+
+<!--##########
+__selected_elements
+##########-->
+
+<section class="page--selected-elements">
+  <div class="scrollable-line--list">
+    {__list_selected_elements}
+  </div>
+</section>
+
+<!--##########
+__list_selected_elements
+##########-->
+
+<article class="---stripe-custom-item-small">
+  <a href="{selected_page_url}">
+    <div class="---stripe-custom-item-small--image __brands">
+      <img lazy-src="{selected_page_image_url}" alt="{selected_page_alt}">
+      <div class="---stripe-custom-item-small--title">{selected_page_title}</div>
+    </div>
+  </a>
+</article>
+
+<!--##########
+__brands_selector
+##########-->
+
+<section class="brands--selector">
+  <div class="container">
+    <div class="brands--selector--list">
+      <ul>
+        {__list_li_brands_selector}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!--##########
+__list_li_brands_selector
+##########-->
+
+<li class="{selector_active}">{brands_selector}</li>
+
+<!--##########
+__brands_items
+##########-->
+
+<section class="brands--items">
+  <div class="container">
+    <div class="brands-items-grid">
+      {__list_brands_items}
+    </div>
+  </div>
+</section>
+
+<!--##########
+__list_brands_items
+##########-->
+
+<article class="brands-item">
+  <a href="{brands_item_url}">
+    <div class="brands-item--image">
+      <img lazy-src="{brands_item_image_url}" alt="{brands_item_image_alt}">
+    </div>
+    <div class="brands-item--item--block">
+      <div class="brands-item--name" lang="ru">{brands_item_title}</div>
+      <div class="brands-item--comment">{brands_item_comment}</div>
+    </div>
+  </a>
+</article>
+
+<!--##########
+__brands_items_nothing_found
+##########-->
+
+<div class="brands--items--nothing-found">
+  <span>Упс! Похоже, что ничего не нашлось...</span> <i class="fa-solid fa-filter-circle-xmark"></i>
+</div>
+
+<!--##########
+__more_link
+##########-->
+
+<div class="brands--items--more {autoload}">
+  <a href="{more_link}">Показать еще</a>
+</div>

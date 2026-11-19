@@ -1,0 +1,106 @@
+<?php
+
+
+namespace totum\common\configs;
+
+use PHPMailer\PHPMailer\PHPMailer;
+use totum\common\errorException;
+
+trait WithPhpMailerSmtpTrait
+{
+    use ListUnsubscribeTrait;
+    abstract protected function getDefaultSender();
+
+    public function sendMail(array|string $to, $title, $body, $attachments = [], $from = null, $replyTo = null, $hcopy = null)
+    {
+
+        $this->loadListUnsubscribeSettings();
+
+        if ($this->listUnsubscribeSettings['enabled'] && is_array($to)) {
+            foreach ($to as $_to) {
+                $this->sendMail($_to, $title, $body, $attachments, $from, $replyTo, $hcopy);
+                if ($hcopy) {
+                    $hcopy = null;
+                }
+            }
+            return;
+        }
+
+
+        if (!$this->checkMailReceivers($to, $hcopy)) {
+            return;
+        }
+
+        list($body, $attachments) = $this->mailBodyAttachments($body, $attachments);
+
+        try {
+            $mail = new PHPMailer(true);
+
+            $this->addListUnsubscribeHeader($mail, $to, $title, $body);
+
+
+            $mail->SMTPDebug = $this->env !== static::ENV_LEVELS["production"];
+            $mail->isSMTP();
+
+            if (!property_exists($this, 'SmtpData') || empty($this->SmtpData) || empty($this->SmtpData['host'] || empty($this->SmtpData['port']))){
+                throw new errorException($this->translate('Fill in the parameter [[%s]]', 'Conf.php SmtpData'));
+            }
+
+
+            $mail->Host = $this->SmtpData['host'];
+            $mail->Port = $this->SmtpData['port'];
+
+            if ($mail->SMTPAuth = !empty($this->SmtpData['login'])) {
+                $mail->Username = $this->SmtpData['login'];
+                $mail->Password = $this->SmtpData['pass'] ?? $this->SmtpData['password'] ?? '';
+            }
+            $mail->CharSet = 'utf-8';
+
+            $from = $from ?? $this->getDefaultSender();
+            //Recipients
+
+            foreach ($this->SmtpData as $k=>$v){
+                if (str_starts_with($k, 'mail_')){
+                    $param = substr($k, 5);
+                    $mail->$param = $v;
+                }
+            }
+
+
+            $mail->setFrom($from, $from);
+            foreach ((array)$to as $_to) {
+                $mail->addAddress($_to);     // Add a recipient
+            }
+
+            if ($replyTo) {
+                $mail->addReplyTo($replyTo);
+            }
+            if ($hcopy) {
+                foreach ((array) $hcopy as $_h){
+                    $mail->addBCC($_h);
+                }
+            }
+
+            foreach ($attachments as $innrName => $fileString) {
+                if (preg_match('/jpg|gif|png$/', $innrName)) {
+                    $mail->addStringEmbeddedImage($fileString, $innrName, $innrName);
+                } else {
+                    $mail->addStringAttachment($fileString, $innrName);
+                }
+            }
+            //Content
+            $mail->isHTML(true);                                  // Set email format to HTML
+            $mail->Subject = $title;
+            $mail->Body = $body;
+
+
+            return $mail->send();
+
+
+        } catch (\Exception $e) {
+            throw new \ErrorException($mail->ErrorInfo);
+        }
+    }
+
+
+}

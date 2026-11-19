@@ -1,0 +1,248 @@
+<!--##########
+main
+##########-->
+
+<main class="page" style="--poster: url({poster_url}); --poster-none: none;" data-video="{video_url}" data-mobile-video="{mobile_video_url}">
+  <div class="page--title-categories--block {poster_class} {white_poster_class}">
+    <section class="page--page-title">
+      <div class="container">
+        <div class="page--page-title-breadcrumbs--block">
+          <button class="page--page-title--back-button" data-back-link="{back_link}" type="button">{back_link_title}</button>
+          <h1>{page_title}</h1>
+          {__nav_breadcrumbs}
+        </div>
+      </div>
+    </section>
+
+    {__page_connection}
+    
+    <div class="loading-video">Загружается видео</div>
+  </div>
+
+  {__selected_elements}
+  {__page_text}
+  {__page_items}
+  {__page_items_nothing_found}
+  {__more_link}
+  {__collection_items}
+  {__comparison}
+  {elements}
+  {additional_blocks}
+
+</main>
+
+<!--##########
+__nav_breadcrumbs
+##########-->
+
+<nav>
+  <div class="breadcrumbs">
+    <ul>
+      {breadcrumbs_li_list}
+    </ul>
+  </div>
+</nav>
+
+<!--##########
+__page_text
+##########-->
+
+<section class="page--main">
+  <div class="container">
+    <div class="site-large-text">
+      {page_text}
+    </div>
+  </div>
+</section>
+
+<!--##########
+__page_connection
+##########-->
+
+<section class="page--connected">
+  <nav>
+    <ul>
+      {__list_li_connection}
+    </ul>
+  </nav>
+</section>
+
+<!--##########
+__list_li_connection
+##########-->
+
+<li>
+  <a href="{connected_page_link}">
+    {__connected_page_image}
+    <div class="page--connected--page-name">{connected_page_name}</div>
+  </a>
+</li>
+
+<!--##########
+__connected_page_image
+##########-->
+
+<div class="page--connected--page-image">
+  <img lazy-src="{connected_image_url}" alt="{connected_page_alt}">
+</div>
+
+<!--##########
+__selected_elements
+##########-->
+
+<section class="page--selected-elements">
+  <div class="scrollable-line--list">
+    {__list_selected_elements}
+  </div>
+</section>
+
+<!--##########
+__list_selected_elements
+##########-->
+
+<article class="---stripe-custom-item-small">
+  <a href="{selected_page_url}">
+    <div class="---stripe-custom-item-small--image">
+      <img lazy-src="{selected_page_image_url}" alt="{selected_page_alt}">
+      <div class="---stripe-custom-item-small--title">{selected_page_title}</div>
+    </div>
+  </a>
+</article>
+
+<!--##########
+__page_items
+##########-->
+
+<section class="page--items">
+  <div class="container">
+    {__back_button}
+    <div class="page-items-grid">
+      {__list_page_items}
+    </div>
+  </div>
+</section>
+
+<!--##########
+__back_button
+##########-->
+
+<button class="page--items--back outline-button" data-link="{data_link}">Показать элементы на предыдущей странице</button>
+
+<!--##########
+__list_page_items
+##########-->
+
+<article id={page_id} class="page-item" data-page="{data_page}">
+  <a href="{page_item_url}">
+    <div class="page-item--image" data-poster-url="{data_poster_url}">
+      <img lazy-src="{page_item_image_url}" alt="{page_item_image_alt}">
+    </div>
+    <div class="page-item--name" lang="ru">{page_item_title}</div>
+  </a>
+  <div class="page-item--text {page_item_short_description_hidden}">
+    <div class="elements-small-text">{page_item_short_description}</div>
+  </div>
+</article>
+
+<!--##########
+__page_items_nothing_found
+##########-->
+
+<div class="page--items--nothing-found">
+  <span>Упс! Похоже, что ничего не нашлось...</span> <i class="fa-solid fa-filter-circle-xmark"></i>
+</div>
+
+<!--##########
+__more_link
+##########-->
+
+<div class="page--items--more {autoload}">
+  <a href="{more_link}">Показать еще</a>
+</div>
+
+
+<!--##########
+__collection_items
+##########-->
+
+<section class="catalog--items">
+  <div class="container">
+    <div class="items-grid">
+      {__list_articles}
+    </div>
+  </div>
+</section>
+
+<!--##########
+__comparison
+##########-->
+
+<section class="comparison">
+  <div class="container">
+    <div class="comparison--grid--block">
+      <div class="comparison--grid" style="--comparison-rows: {comparison_rows}">
+        {__list_comparison_grid}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--##########
+__list_comparison_grid
+##########-->
+
+<div class="comparison--grid--image" data-sku="{sku_num}">
+  {__comparison_grid_image}
+</div>
+{__comparison_title}
+{__comparison_clear_button}
+{__list_characteristic_values}
+
+<!--##########
+__comparison_title
+##########-->
+
+<a href="{sku_url}"><div class="comparison--grid--title" data-sku="{sku_num}" lang="ru">{sku_title}</div></a>
+
+<!--##########
+__comparison_grid_image
+##########-->
+
+<img class="{image_cover}" alt="{cimage_alt}" lazy-src="{cimage_url}">
+
+<!--##########
+__list_characteristic_values
+##########-->
+
+<!-- Используется либо __list_characteristic либо __list_values -->
+
+<!--##########
+__list_characteristic
+##########-->
+
+<div class="comparison--grid--characteristic">{characteristic_title}</div>
+
+<!--##########
+__list_values
+##########-->
+
+<div class="comparison--grid--value" data-sku="{sku_num}">{characteristic_value}</div>
+
+<!--##########
+__comparison_clear_button
+##########-->
+
+<button type="button" class="__clear __active" data-sku="{sku_num}" aria-label="Удалить из сравнения"><i class="fa-solid fa-xmark"></i></button>
+
+<!--##########
+__comparison_clear
+##########-->
+<section class="comparison">
+  <div class="container">
+    <div class="comparison--clear--block">
+      <div class="comparison--clear--bulb"><i class="fa-solid fa-lightbulb"></i></div>
+      <div class="comparison--clear--text">В сравнение не добавлено ни одного товара. Для добавления кликните на <i class="fa-solid fa-lightbulb"></i> в карточке любого товара.</div>
+      <button class="comparison--clear--catalog outline-button" type="button" data-link="/catalog">Каталог</button>
+    </div>
+  </div>
+</section>

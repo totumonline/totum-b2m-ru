@@ -1,0 +1,23 @@
+<!--##########
+main
+##########-->
+
+<div class="city--results--items">
+  <ul>
+    {__list_cities}
+  </ul>
+</div>
+
+<!--##########
+__list_cities
+##########-->
+
+<li data-city-id="{city_fias}" data-city="{city}" data-region="{region}" data-city-address="{city_address}">{city_address}</li>
+
+<!--##########
+__nothing_found
+##########-->
+
+<div class="city--nothing-found">
+  <span>Упс! Похоже, что ничего не нашлось...</span> <i class="fa-solid fa-filter-circle-xmark"></i>
+</div>

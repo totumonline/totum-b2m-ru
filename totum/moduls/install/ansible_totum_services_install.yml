@@ -1,0 +1,663 @@
+---
+
+- hosts: localhost
+  become: true
+
+  tasks:
+
+  # Ubuntu version, local and timezone
+
+  - name: Ensure locales package is installed
+    apt:
+      name: locales
+      state: present
+
+  - name: Check if LANG=en_US.UTF-8 is set
+    shell: locale | grep -c 'LANG=en_US.UTF-8'
+    register: locale_check
+
+  - name: Fail if LANG=en_US.UTF-8 is not set
+    fail:
+      msg: "LANG=en_US.UTF-8 is not set in the locale configuration"
+    when: locale_check.stdout | int == 0
+
+  - name: Set the timezone
+    command: timedatectl set-timezone {{ lookup('env', 'TOTUMTIMEZONE') }}
+
+  # Add PPA and some packages
+
+  # Add PHP (sury)
+
+  - name: Download sury PHP GPG key
+    get_url:
+      url: https://mirror.yandex.ru/mirrors/packages.sury.org/php/apt.gpg
+      dest: /usr/share/keyrings/deb.sury.org-php.gpg
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Add sury PHP repository to sources
+    copy:
+      dest: /etc/apt/sources.list.d/php.sources
+      owner: root
+      group: root
+      mode: '0644'
+      content: |
+        Types: deb
+        URIs: https://mirror.yandex.ru/mirrors/packages.sury.org/php/
+        Suites: resolute
+        Components: main
+        Signed-By: /usr/share/keyrings/deb.sury.org-php.gpg
+
+  - name: Apt update
+    apt:
+      update_cache: yes
+
+  - name: apt install some common packages
+    apt:
+      name:
+        - git
+        - unzip
+        - curl
+        - nano
+        - htop
+        - wget
+        - certbot
+        - ufw
+        - gnupg
+        - tzdata
+        - openssl
+      state: latest
+
+  - name: Deny all incoming connections by default
+    ufw:
+      default: deny
+      direction: incoming
+
+  - name: Allow all outgoing connections by default
+    ufw:
+      default: allow
+      direction: outgoing
+
+  - name: Allow HTTP traffic on port 22
+    ufw:
+      rule: allow
+      port: 22
+      proto: tcp
+
+  - name: Allow HTTP traffic on port 80
+    ufw:
+      rule: allow
+      port: 80
+      proto: tcp
+
+  - name: Allow HTTPS traffic on port 443
+    ufw:
+      rule: allow
+      port: 443
+      proto: tcp
+
+  - name: Ensure UFW is enabled
+    ufw:
+      state: enabled
+
+  # Chek IP
+
+  - name: Check CERTBOTDOMAIN environment variable
+    set_fact:
+      check_domain: "{{ lookup('env', 'CERTBOTDOMAIN') }}"
+
+  - name: Check TOTUMSERVIP environment variable if CERTBOTDOMAIN is empty
+    set_fact:
+      check_ip: "{{ lookup('env', 'TOTUMSERVIP') }}"
+
+  - name: Determine external IP if CERTBOTDOMAIN and TOTUMSERVIP are empty
+    set_fact:
+      external_ip: "{{ ansible_default_ipv4.address }}"
+    when: check_domain == "" and check_ip == ""
+
+  - name: Show determined external IP and confirm
+    pause:
+      prompt: "Determined external IP is '{{ external_ip }}'. Is this the correct external IP of the server? Type (A) or (N)"
+    register: ip_confirmation
+    when: check_domain == "" and check_ip == ""
+
+  - name: Fail if the user gave an incorrect answer
+    fail:
+      msg: "Aborted by user"
+    when: check_domain == "" and check_ip == "" and ip_confirmation.user_input is defined and (ip_confirmation.user_input | lower) not in ['a', 'n']
+
+  - name: Prompt for correct external IP if necessary
+    pause:
+      prompt: "Please enter the correct external IP"
+    register: new_external_ip
+    when: check_domain == "" and check_ip == "" and ip_confirmation.user_input is defined and (ip_confirmation.user_input | lower) == 'n'
+
+  - name: Confirm entered external IP
+    pause:
+      prompt: "You entered '{{ new_external_ip.user_input }}'. If this is correct, type (A) or cancel (Ctrl + C)"
+    register: confirm_correct_ip
+    when: check_domain == "" and check_ip == "" and ip_confirmation.user_input is defined and (ip_confirmation.user_input | lower) == 'n'
+
+  - name: Fail if user did not confirm correct IP
+    fail:
+      msg: "Aborted by user"
+    when: confirm_correct_ip.user_input is defined and (confirm_correct_ip.user_input | lower) != 'a' and check_domain == "" and check_ip == "" and ip_confirmation.user_input is defined and (ip_confirmation.user_input | lower) == 'n'
+
+  - name: Set final external IP
+    set_fact:
+      external_ip: "{{ new_external_ip.user_input }}"
+    when: check_domain == "" and check_ip == "" and new_external_ip.user_input is defined
+
+  - name: Append TOTUMSERVIP to totum_services_install_vars
+    lineinfile:
+      path: "{{ playbook_dir }}/totum_services_install_vars"
+      line: "export TOTUMSERVIP={{ external_ip }}"
+    when: check_domain == "" and check_ip == ""
+
+  - name: Set variable for external IP
+    set_fact:
+      ip_for_install: "{{ lookup('env', 'TOTUMSERVIP') if check_ip != '' else external_ip }}"
+    when: check_domain == ""
+
+  # Get a certificate
+
+  - name: Check IPDOMAIN environment variable
+    set_fact:
+      check_ip_domain: "{{ lookup('env', 'IPDOMAIN') }}"
+
+  - name: Check for certbot certificate directory
+    stat:
+      path: /etc/letsencrypt/live/{{ lookup('env', 'CERTBOTDOMAIN') }}
+    register: certbot_certificate_directory
+    when: check_domain != ""
+
+  - name: Certificate exist
+    debug:
+      msg: "Certificate exist!"
+    when: certbot_certificate_directory.stat is defined and certbot_certificate_directory.stat.exists and check_domain != ""
+
+  - name: Stop Nginx service
+    service:
+      name: nginx
+      state: stopped
+    when: certbot_certificate_directory.stat is defined and not certbot_certificate_directory.stat.exists and check_domain != "" and check_ip != "" and check_ip_domain == ""
+
+  - name: Run certbot dry run for check domain
+    shell: "certbot certonly --standalone --dry-run --non-interactive --register-unsafely-without-email --agree-tos -d {{ lookup('env', 'CERTBOTDOMAIN') }}"
+    register: certbot_check_domain_result
+    when: certbot_certificate_directory.stat is defined and not certbot_certificate_directory.stat.exists and check_domain != ""
+
+  - name: Debug certbot check domain result
+    debug:
+      msg: "{{ certbot_check_domain_result.stdout }}"
+    when: certbot_certificate_directory.stat is defined and not certbot_certificate_directory.stat.exists and check_domain != ""
+
+  - name: Check for success message in certbot output
+    assert:
+      that:
+        - "'The dry run was successful.' in certbot_check_domain_result.stdout"
+      fail_msg: "Certbot did't get certificate for you domain! Check DNS for you domain and try again later! If you setup NS or DNS less than 3 hours ago, maybe these changes have not reached the Let's encrypt servers. Wait one hour and try again."
+    when: certbot_certificate_directory.stat is defined and not certbot_certificate_directory.stat.exists and check_domain != ""
+
+  - name: Check for Certbot registration directory
+    stat:
+      path: /etc/letsencrypt/accounts/acme-v02.api.letsencrypt.org/directory
+    register: certbot_registration
+    when: check_domain != ""
+
+  - name: Certbot is registered
+    debug:
+      msg: "Certbot is registered!"
+    when: certbot_certificate_directory.stat is defined and certbot_registration.stat.exists and check_domain != ""
+
+  - name: Run certbot registration
+    shell: "certbot register --email {{ lookup('env', 'CERTBOTEMAIL') }} --agree-tos --no-eff-email"
+    register: certbot_registration_result
+    when: certbot_certificate_directory.stat is defined and not certbot_registration.stat.exists and check_domain != ""
+
+  - name: Debug certbot registration result
+    debug:
+      msg: "{{ certbot_registration_result.stdout }}"
+    when: certbot_certificate_directory.stat is defined and not certbot_registration.stat.exists and check_domain != ""
+
+  - name: Run certbot to obtain a certificate
+    shell: "certbot certonly --standalone --non-interactive -d {{ lookup('env', 'CERTBOTDOMAIN') }}"
+    register: certbot_certificate_result
+    ignore_errors: no
+    when: certbot_certificate_directory.stat is defined and not certbot_certificate_directory.stat.exists and check_domain != ""
+
+  - name: Debug certbot certificate result
+    debug:
+      msg: "{{ certbot_certificate_result.stdout }}"
+    when: certbot_certificate_directory.stat is defined and not certbot_certificate_directory.stat.exists and check_domain != ""
+
+  - name: Check for success message in certbot certificate output
+    assert:
+      that:
+        - "'Successfully received certificate.' in certbot_certificate_result.stdout"
+      fail_msg: "Certbot did't get certificate for you domain!"
+    when: certbot_certificate_directory.stat is defined and not certbot_certificate_directory.stat.exists and check_domain != ""
+
+  - name: Final check for certbot certificate directory
+    stat:
+      path: /etc/letsencrypt/live/{{ lookup('env', 'CERTBOTDOMAIN') }}
+    register: certbot_certificate_final_check
+    when: check_domain != ""
+
+  - name: Fail if certbot certificate directory does not exist
+    fail:
+      msg: "Certbot directory for domain {{ lookup('env', 'CERTBOTDOMAIN') }} does not exist. Please ensure Certbot is registered and the certificate has been obtained."
+    when: certbot_certificate_directory.stat is defined and not certbot_certificate_final_check.stat.exists and check_domain != ""
+
+  - name: Create Certbot CLI configuration file
+    copy:
+      dest: /etc/letsencrypt/cli.ini
+      content: |
+        authenticator = webroot
+        webroot-path = /var/www/html
+        post-hook = service nginx reload
+        text = True
+      owner: root
+      group: root
+    when: check_domain != ""
+
+  - name: Start Nginx service
+    service:
+      name: nginx
+      state: started
+    when: certbot_certificate_directory.stat is defined and not certbot_certificate_directory.stat.exists and check_domain != "" and check_ip != "" and check_ip_domain == ""
+
+  # Create a user
+
+  - name: Create group totum
+    group:
+      name: totum
+      state: present
+
+  - name: Add user totum
+    user:
+      name: totum
+      group: totum
+      shell: /bin/bash
+      state: present
+      create_home: yes
+
+  - name: Set permissions for the home directory of user totum
+    file:
+      path: /home/totum
+      state: directory
+      mode: '0755'
+
+  # Install PHP and modules
+
+  - name: apt install PHP 8.5 and modules
+    apt:
+      name:
+        - php8.5
+        - php8.5-cli
+        - php8.5-curl
+        - php8.5-fpm
+        - php8.5-gd
+        - php8.5-xml
+        - php8.5-zip
+        - php8.5-mbstring
+
+      state: latest
+
+  - name: Check if totum_fpm.conf file exists
+    stat:
+      path: /etc/php/8.5/fpm/pool.d/totum_services.conf
+    register: totum_fpm_conf
+
+  - name: Download totum_services_fpm.conf
+    get_url:
+      url: https://raw.githubusercontent.com/totumonline/totum-pro/pro/totum/moduls/install/totum_services_fpm.conf
+      dest: /etc/php/8.5/fpm/pool.d/totum_services.conf
+      owner: root
+      group: root
+    when: not totum_fpm_conf.stat.exists
+
+  - name: Remove default www.conf
+    file:
+      path: /etc/php/8.5/fpm/pool.d/www.conf
+      state: absent
+
+  - name: Restart PHP FPM service
+    service:
+      name: php8.5-fpm
+      state: restarted
+
+  # Install Nginx
+
+  - name: apt install nginx
+    apt:
+      name: nginx
+      state: latest
+
+  - name: Check if totum.services.conf file exists
+    stat:
+      path: /etc/nginx/sites-available/totum.services.conf
+    register: totum_services_conf
+
+  - name: Create directory for acme-challenge
+    file:
+      path: /var/www/html/.well-known/acme-challenge
+      state: directory
+      owner: root
+      group: root
+
+  - name: Remove default Nginx site configuration (available)
+    file:
+      path: /etc/nginx/sites-available/default
+      state: absent
+
+  - name: Remove default Nginx site configuration (enabled)
+    file:
+      path: /etc/nginx/sites-enabled/default
+      state: absent
+
+  - name: Create Nginx acme configuration file
+    copy:
+      dest: /etc/nginx/acme
+      content: |
+        location /.well-known {
+            root /var/www/html;
+        }
+
+  # Actions for domain or ip install
+
+  - name: Download totum.services.conf
+    get_url:
+      url: https://raw.githubusercontent.com/totumonline/totum-pro/pro/totum/moduls/install/totum.services.conf
+      dest: /etc/nginx/sites-available/totum.services.conf
+      owner: root
+      group: root
+    when: not totum_services_conf.stat.exists and check_domain != ""
+
+  - name: Download totum.services.conf.ip
+    get_url:
+      url: https://raw.githubusercontent.com/totumonline/totum-pro/pro/totum/moduls/install/totum.services.conf.ip
+      dest: /etc/nginx/sites-available/totum.services.conf
+      owner: root
+      group: root
+    when: not totum_services_conf.stat.exists and check_domain == ""
+
+  - name: Replace domain in totum.services.conf
+    replace:
+      path: /etc/nginx/sites-available/totum.services.conf
+      regexp: 'YOUR_DOMAIN'
+      replace: "{{ lookup('env', 'CERTBOTDOMAIN') }}"
+    when: check_domain != ""
+
+  # Restart nginx
+
+  - name: Create symlink for Totum Nginx configuration
+    file:
+      src: /etc/nginx/sites-available/totum.services.conf
+      dest: /etc/nginx/sites-enabled/totum.services.conf
+      state: link
+
+  - name: Restart Nginx service
+    service:
+      name: nginx
+      state: restarted
+
+  # Install Services
+
+  - name: Set install_url based on check_domain
+    set_fact:
+      install_url: "{{ lookup('env', 'CERTBOTDOMAIN') if check_domain != '' else ip_for_install }}"
+
+  - name: Show install_url variable
+    debug:
+      msg: "The install_url is: {{ install_url }}"
+
+  - name: Check if totum-services directory exists
+    stat:
+      path: /home/totum/totum-services
+    register: totum_services
+
+  - name: Clone Totum repository
+    git:
+      repo: https://github.com/totumonline/totum-services.git
+      dest: /home/totum/totum-services
+      version: services
+      update: yes
+    become_user: totum
+    when: not totum_services.stat.exists
+
+  - name: Check if composer.phar file exists
+    stat:
+      path: /home/totum/totum-services/composer.phar
+    register: composer_phar
+
+  - name: Download Composer installer
+    get_url:
+      url: https://getcomposer.org/installer
+      dest: /home/totum/totum-services/composer-setup.php
+      owner: totum
+      group: totum
+    when: not composer_phar.stat.exists
+
+  - name: Unpack Composer installer
+    shell: php /home/totum/totum-services/composer-setup.php --quiet
+    become_user: totum
+    args:
+      chdir: /home/totum/totum-services
+      executable: /bin/bash
+    when: not composer_phar.stat.exists
+
+  - name: Remove Composer installer
+    file:
+      path: /home/totum/totum-services/composer-setup.php
+      state: absent
+
+  - name: Run Composer install
+    shell: php /home/totum/totum-services/composer.phar install --no-dev
+    become_user: totum
+    args:
+      chdir: /home/totum/totum-services
+      executable: /bin/bash
+
+  - name: Check if CLI.totum.php.ini file exists
+    stat:
+      path: /home/totum/totum-services/CLI.totum.php.ini
+    register: cli_totum_php_ini
+
+  - name: Create CLI.totum.php.ini file
+    copy:
+      dest: /home/totum/totum-services/CLI.totum.php.ini
+      content: |
+        opcache.enable_cli = 1
+        opcache.memory_consumption = 256M
+        date.timezone = Europe/London
+      owner: totum
+      group: totum
+      mode: '0664'
+    when: not cli_totum_php_ini.stat.exists
+
+  - name: Replace timezone in CLI.totum.php.ini
+    replace:
+      path: /home/totum/totum-services/CLI.totum.php.ini
+      regexp: 'Europe/London'
+      replace: "{{ lookup('env', 'TOTUMTIMEZONE') }}"
+
+  - name: Check if FPM.totum.php.ini file exists
+    stat:
+      path: /home/totum/totum-services/FPM.totum.php.ini
+    register: fpm_totum_php_ini
+
+  - name: Create FPM.totum.php.ini file
+    copy:
+      dest: /home/totum/totum-services/FPM.totum.php.ini
+      content: |
+        memory_limit = 1024M
+        upload_max_filesize = 30M
+        post_max_size = 0
+        opcache.enable = 1
+        opcache.memory_consumption = 256M
+        date.timezone = Europe/London
+        display_errors = stderr
+        log_errors = On
+      owner: totum
+      group: totum
+      mode: '0664'
+    when: not fpm_totum_php_ini.stat.exists
+
+  - name: Replace timezone in FPM.totum.php.ini
+    replace:
+      path: /home/totum/totum-services/FPM.totum.php.ini
+      regexp: 'Europe/London'
+      replace: "{{ lookup('env', 'TOTUMTIMEZONE') }}"
+
+  - name: Create symlink for Totum PHP-FPM INI configuration
+    file:
+      src: /home/totum/totum-services/FPM.totum.php.ini
+      dest: /etc/php/8.5/fpm/conf.d/90-FPM.totum.php.ini
+      state: link
+
+  - name: Restart PHP FPM service
+    service:
+      name: php8.5-fpm
+      state: restarted
+
+  - name: Set execute permission for docx
+    file:
+      path: /home/totum/totum-services/services/docx
+      mode: '0775'
+
+  - name: Set execute permission for pdf
+    file:
+      path: /home/totum/totum-services/services/pdf
+      mode: '0775'
+
+  - name: Set execute permission for xlsx
+    file:
+      path: /home/totum/totum-services/services/xlsx
+      mode: '0775'
+
+  - name: Set execute permission for folders_cleaner
+    file:
+      path: /home/totum/totum-services/crons/folders_cleaner
+      mode: '0775'
+
+  - name: Ensure tmp_files directory exists with correct permissions and owner
+    file:
+      path: /home/totum/totum-services/tmp_files
+      state: directory
+      owner: totum
+      group: totum
+      mode: '0775'
+
+  - name: Ensure fls directory exists with correct permissions and owner
+    file:
+      path: /home/totum/totum-services/http/fls
+      state: directory
+      owner: totum
+      group: totum
+      mode: '0775'
+
+  # Install Libreoffice
+
+  - name: apt install libreoffice
+    apt:
+      name: libreoffice
+      state: latest
+
+  # Add Crons
+
+  - name: Initialize empty crontab for root if missing
+    shell: crontab -u root -l >/dev/null 2>&1 || echo '' | crontab -u root -
+    become: true
+
+  - name: Initialize empty crontab for totum if missing
+    shell: crontab -u totum -l >/dev/null 2>&1 || echo '' | crontab -u totum -
+    become: true
+
+  - name: Generate a random minute for cron job
+    set_fact:
+      random_minute: "{{ 1 + (59 | random) }}"
+
+  - name: Add cron job for certbot renew with random minute
+    cron:
+      name: "certbot-renew"
+      minute: "{{ random_minute }}"
+      hour: "*/12"
+      day: "*"
+      month: "*"
+      weekday: "*"
+      user: "root"
+      job: "certbot renew --quiet --allow-subset-of-names"
+    when: check_domain != ""
+
+  - name: Add cron job for folders_cleaner
+    cron:
+      name: "services_folders_cleaner"
+      minute: "*/10"
+      hour: "*"
+      day: "*"
+      month: "*"
+      weekday: "*"
+      user: "totum"
+      job: "cd /home/totum/totum-services/crons && ./folders_cleaner"
+
+  - name: Add cron job for clean log file
+    cron:
+      name: "services_logfile_cleaner"
+      minute: "0"
+      hour: "*/8"
+      day: "*"
+      month: "*"
+      weekday: "*"
+      user: "totum"
+      job: "cd /home/totum/totum-services/ && tail -n 1000 services_log > services_log.tmp && mv services_log.tmp services_log"
+
+  # Change IP to DOMAIN
+
+  - name: Check IPDOMAIN environment variable
+    set_fact:
+      check_ip_domain: "{{ lookup('env', 'IPDOMAIN') }}"
+
+  - name: Switch IP to Domain - Download totum.services.conf
+    get_url:
+      url: https://raw.githubusercontent.com/totumonline/totum-pro/pro/totum/moduls/install/totum.services.conf
+      dest: /etc/nginx/sites-available/totum.services.conf
+      owner: root
+      group: root
+    when: check_domain != "" and check_ip != "" and check_ip_domain == ""
+
+  - name: Switch IP to Domain - Replace domain in totum.services.conf
+    replace:
+      path: /etc/nginx/sites-available/totum.services.conf
+      regexp: 'YOUR_DOMAIN'
+      replace: "{{ lookup('env', 'CERTBOTDOMAIN') }}"
+    when: check_domain != "" and check_ip != "" and check_ip_domain == ""
+
+  - name: Restart Nginx service
+    service:
+      name: nginx
+      state: restarted
+    when: check_domain != "" and check_ip != "" and check_ip_domain == ""
+
+  - name: Append IPDOMAIN to totum_services_install_vars
+    lineinfile:
+      path: "{{ playbook_dir }}/totum_services_install_vars"
+      line: "export IPDOMAIN=true"
+    when: check_domain != "" and check_ip != "" and check_ip_domain == ""
+
+  # Final
+
+  - name: Show installation completion message
+    debug:
+      msg: "NOW YOU CAN ADD YOUR TOTUM SERVER HOST TO /home/totum/totum-services/services_list AND ADD {{ install_url }} WITH PROTOCOL (HTTP/HTTPS) AS SERVICE URL IN THE SERVICE SETTINGS IN YOUR TOTUM. IF YOU INSTALLED SERVICES WITHOUT SSL, THEN IN THE Conf.php SETTINGS IN TOTUM YOU NEED TO DISABLE CERTIFICATE CHECKING WHEN CALLING SERVICES (CHECK https://docs.totum.online/srv_connection)."
+
+  - name: Ask to upgrade software on the server
+    pause:
+      prompt: "Do you want to upgrade the software on the server? If yes, type (A) or (N)"
+    register: upgrade_response
+
+  - name: Perform apt upgrade if user agreed
+    apt:
+      upgrade: safe
+    when: upgrade_response.user_input | lower == 'a'

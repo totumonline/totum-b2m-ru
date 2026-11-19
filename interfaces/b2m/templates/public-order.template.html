@@ -1,0 +1,43 @@
+<!--##########
+main
+##########-->
+
+<section class="short--header">
+  <button class="short--header--go-back" type="button" aria-label="Вернуться на предыдущую страницу"></button>
+  <div class="short--header--logo">
+    <a href="/">
+      <picture>
+        <source media="(max-width: 600px)" srcset="{logo_small}">
+        <img src="{logo_big}" alt="Bitum">
+      </picture>
+    </a>
+  </div>
+  <button class="short--header--close" type="button" aria-label="Вернуться на главную страницу"></button>
+</section>
+
+<section class="public-order __processing">
+  <div class="public-order--loader">
+    <div class="public-order--loader--text">Ожидание платежной системы</div>
+    <div class="public-order--loader--bar"></div>
+  </div>
+  <div class="narrow-container">
+    <div class="public-order--block">
+      <div class="public-order--icon"><i class="fa-solid fa-circle-check"></i></div>
+      <div class="public-order--title">{title}</div>
+      <div class="public-order--text">
+        <div class="site-large-text">
+          {information}
+        </div>
+      </div>
+      <div class="public-order--payment {payment_hidden} {autopay} {link_type}">
+        <div class="elements-large-text">
+          {payment_text}
+        </div>
+        <button class="public-order--payment--button main-button {payment_button_active}" type="button" data-link="{data_link}" data-file="{data_file}">{button_text}</button>
+        <div class="public-order--payment--error"></div>
+        <div class="public-order--payment--succsess {success_active}">{success_text}</div>
+      </div>
+      <div class="public-order--button"><a class="outline-button" href="/">Вернуться к покупкам</a></div>
+    </div>
+  </div>
+</section>

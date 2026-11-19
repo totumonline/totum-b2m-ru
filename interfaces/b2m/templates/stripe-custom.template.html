@@ -1,0 +1,75 @@
+<!--##########
+main
+##########-->
+
+<section class="stripe-custom additional_classes_list">
+  {__title_block}
+  <div class="scrollable-line--list--block">
+    <div class="scrollable-line--list">
+      {__list_gallery_article}
+    </div>
+  </div>
+</section>
+
+<!--##########
+__title_block
+##########-->
+
+<div class="stripe-custom--title--block">
+  <h2>{gallery_title}</h2>
+  {__title_block_link}
+</div>
+
+<!--##########
+__title_block_link
+##########-->
+
+<a href="{gallery_link}">/ {gallery_link_title}</a>
+
+<!--##########
+__list_gallery_article
+##########-->
+
+<article class="---stripe-custom-item">
+  <a href="{gellery_scroll_main_link}">
+    <div class="---stripe-custom-item--image">
+      <img lazy-src="{gallery_scroll_image}" alt="{gallery_scroll_title}">
+      <div class="---stripe-custom-item--buttons">
+        {__gallery_subtitle}
+        {__gallery_additional_links}
+        <div class="---stripe-custom-item--buttons--title">{gallery_scroll_title}</div>
+      </div>
+    </div>
+  </a>
+  {__gallery_scroll_text}
+</article>
+
+<!--##########
+__gallery_subtitle
+##########-->
+
+<div class="---stripe-custom-item--buttons--subtitle">{gallery_scroll_subtitle}</div>
+
+<!--##########
+__gallery_additional_links
+##########-->
+
+<ul>
+  {__list_additional_link_li}
+</ul>
+
+<!--##########
+__list_additional_link_li
+##########-->
+
+<li><button class="stripe-custom--button outline-button" data-link="{additional_link}">{additional_link_title}</button></li>
+
+<!--##########
+__gallery_scroll_text
+##########-->
+
+<div class="---stripe-custom-item--title--block">
+  <div class="---stripe-custom-item--subtitle">
+    <div class="elements-medium-text">{gallery_scroll_text}</div>
+  </div>
+</div>

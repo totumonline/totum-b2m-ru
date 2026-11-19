@@ -1,0 +1,44 @@
+<!--##########
+main
+##########-->
+
+<section class="grid-custom additional_classes_list">
+  <div class="container">
+    <div class="grid-custom--block">
+      {__title_block}
+      <div class="grid-custom--list">
+        <ul>
+          {__list_gallery_article}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--##########
+__title_block
+##########-->
+
+<div class="grid-custom--title--block">
+  <h2>{gallery_title}</h2>
+  {__title_block_link}
+</div>
+
+<!--##########
+__title_block_link
+##########-->
+
+<a href="{gallery_link}">/ {gallery_link_title}</a>
+
+<!--##########
+__list_gallery_article
+##########-->
+
+<li>
+  <a href="{gellery_scroll_main_link}">
+    <div class="grid-custom--list--image">
+      <img lazy-src="{gallery_scroll_image}" alt="{gallery_scroll_title}">
+    </div>
+    <div class="grid-custom--list--title">{gallery_scroll_title}</div>
+  </a>
+</li>

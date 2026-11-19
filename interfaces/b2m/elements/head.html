@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="format-detection" content="telephone=no">
+
+  <title>{seo_title}</title>
+  <meta name="description" content="{seo_description}">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:site_name" content="{og_site_name}">
+  <meta property="og:title" content="{og_title}">
+  <meta property="og:description" content="{og_description}">
+  <meta property="og:image" content="{og_image}">
+  <meta property="og:url" content="{seo_canonical}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="{og_image}">
+  <link rel="canonical" href="{seo_canonical}">
+  <link rel="icon" href="{main_favicon_url}" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="{apple_favicon_url}">
+  <link rel="manifest" href="/interfaces/{interface}/fetch/manifest.webmanifest">
+
+  {link_rel}
+
+  {noindex}
+
+  {page_image_preload}
+
+  {configurator_script}
+
+  <script>
+    window.interface = '{interface}';
+  </script>
+
+  <script>
+    (function() {
+      function setAllHeaderHeight() {
+        var headerMain = document.querySelector('.header--main');
+        if (!headerMain) return false;
+        var height = headerMain.offsetHeight;
+        if (window.innerWidth >= 1121) {
+          var topMenuNav = document.getElementById('top-menu');
+          var quickNav = document.getElementById('quick');
+          height += topMenuNav ? topMenuNav.offsetHeight : 0;
+          height += quickNav ? quickNav.offsetHeight : 0;
+        }
+        document.body.style.setProperty('--all-header-height', height + 'px');
+        return true;
+      }
+
+      var cachedHeader = null;
+      var headerObserver = new MutationObserver(function() {
+        if (!document.body) return;
+        if (!cachedHeader) cachedHeader = document.querySelector('header');
+        if (!cachedHeader || !cachedHeader.nextElementSibling) return;
+        headerObserver.disconnect();
+        setAllHeaderHeight();
+      });
+      headerObserver.observe(document.documentElement, { childList: true, subtree: true });
+
+      document.addEventListener('DOMContentLoaded', function() {
+        headerObserver.disconnect();
+        setAllHeaderHeight();
+      });
+    })();
+  </script>
+
+  <script src="/interfaces/{interface}/js/header.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/catalog.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/lazy.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/video.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/scroller.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/item.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/nav.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/recent.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/product.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/reviews.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/slot.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/city.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/cart.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/checkout.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/stripe-custom.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/stories.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/brands.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/search.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/auth.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/signup.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/telephone.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/account.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/favorites.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/subscribe.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/sanitizer.min.js?v=194" defer></script>
+  <script src="/interfaces/{interface}/js/comparison.min.js?v=194" defer></script>
+  
+
+  {configurator}
+
+  {scripts}
+
+  <script type="application/ld+json">
+    {schema_org_main}
+  </script>
+
+  {schema_org_product}
+
+  {add_to_head}
+
+</head>

@@ -1,0 +1,122 @@
+<section class="short--header">
+  <button class="short--header--go-back" type="button" aria-label="Вернуться на предыдущую страницу"></button>
+  <div class="short--header--logo">
+    <a href="/">
+      <picture>
+        <source media="(max-width: 600px)" srcset="{logo_small}">
+        <img src="{logo_big}" alt="Bitum">
+      </picture>
+    </a>
+  </div>
+  <button class="short--header--close" type="button" aria-label="Вернуться на главную страницу"></button>
+</section>
+
+<main class="auth-signup {token_auth}" data-auth-page="auth" data-auth-redirect="/account" data-auth-logout-redirect="/">
+  <div class="narrow-container">
+    <div class="auth-signup--card--block">
+      <div class="auth-signup--card __loading">
+        <div class="auth-signup--card--head">
+          <div class="auth-signup--card--head--title">Вход в личный кабинет</div>
+          <div class="auth-signup--card--head--subtitle">Введите Email, указанный при регистрации или оформлении заказа</div>
+        </div>
+
+        <div class="auth-signup--card--message" role="alert" aria-live="polite"></div>
+
+        <div class="auth-signup--card--loader">
+          <div class="auth-signup--card--loader--spinner"></div>
+          <div class="auth-signup--card--loader--text">Проверяем сессию</div>
+        </div>
+
+        <form class="auth-signup--card--login-form" novalidate>
+          <div class="---login-form--field">
+            <label for="auth-login">Email</label>
+            <div class="---login-form--email--block">
+              <div class="---login-form--input--block">
+                <input type="email" id="auth-login" name="login" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="{email_placeholder}">
+                <button type="button" class="__clear" tabindex="-1" aria-label="Очистить"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <button type="button" class="---login-form--email--token">Отправить ссылку для входа</button>
+            </div>
+          </div>
+
+          <div class="---login-form--field">
+            <label for="auth-pass">Пароль</label>
+            <div class="---login-form--input--block">
+              <input type="password" id="auth-pass" name="pass" autocomplete="current-password" placeholder="Пароль">
+              <button type="button" class="__reveal" tabindex="-1" aria-label="Показать пароль"><i class="fa-solid fa-eye"></i></button>
+            </div>
+          </div>
+
+          <div class="---login-form--domain">
+            <label for="auth-type">Тип авторизации</label>
+            <div class="---login-form--domain--select">
+              <select id="auth-type" name="type"></select>
+            </div>
+          </div>
+
+          <button type="submit" class="---login-form--submit main-button">Войти</button>
+
+          <a class="---login-form--signup" href="/signup">Зарегистрироваться</a>
+
+          <div class="---login-form--links">
+            <button type="button" class="---login-form--links--recover transparent-button">Забыли пароль?</button>
+          </div>
+        </form>
+
+        <form class="auth-signup--card--recover-form" novalidate>
+          <div class="---recover-form--hint">На указанный Email придёт новый пароль. После входа его можно сменить в личном кабинете.</div>
+
+          <div class="---recover-form--field">
+            <label for="auth-recover-login">Email</label>
+            <div class="---recover-form--input--block">
+              <input type="email" id="auth-recover-login" name="login" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="{email_placeholder}">
+              <button type="button" class="__clear" tabindex="-1" aria-label="Очистить"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+
+          <button type="submit" class="---recover-form--submit main-button">Отправить новый пароль</button>
+
+          <div class="---recover-form--links">
+            <button type="button" class="---recover-form--links--back transparent-button">Вернуться к входу</button>
+          </div>
+        </form>
+
+        <form class="auth-signup--card--secret-form" novalidate>
+          <div class="---secret-form--hint">Подтвердите вход одноразовым кодом</div>
+
+          <div class="---secret-form--field">
+            <label for="auth-secret">Код подтверждения</label>
+            <div class="---secret-form--input--block">
+              <input type="text" id="auth-secret" name="secret" inputmode="numeric" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" placeholder="{2fa_code_placeholder}">
+              <button type="button" class="__clear" tabindex="-1" aria-label="Очистить"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+
+          <button type="submit" class="---secret-form--submit main-button">Подтвердить</button>
+
+          <div class="---secret-form--links">
+            <button type="button" class="---secret-form--links--resend transparent-button" disabled>Отправить код повторно</button>
+            <button type="button" class="---secret-form--links--cancel transparent-button">Отменить вход</button>
+          </div>
+        </form>
+
+        <div class="auth-signup--card--authorized">
+          <div class="auth-signup--card--authorized--text">Вы уже авторизованы на сайте</div>
+          <a class="auth-signup--card--authorized--account main-button" href="/account">Перейти в личный кабинет</a>
+          <button type="button" class="auth-signup--card--authorized--logout outline-button">Выйти</button>
+        </div>
+
+        <div class="auth-signup--card--openid">
+          <div class="auth-signup--card--openid--title">Или войдите/зарегистрируйтесь через</div>
+          <div class="auth-signup--card--openid--list">
+            <ul></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-signup--card--terms">
+        {registration_html}
+      </div>
+    </div>
+  </div>
+</main>

@@ -1,0 +1,62 @@
+<!--##########
+main
+##########-->
+
+<section class="banner for_replace_poster additional_classes_list">
+  <div class="scroller-container">
+    <div class="scroller __additional-banner {autoscroll} {timer}">
+      <ul>
+        {__list_banner_li}
+      </ul>
+      <div class="loading-video">Загружается видео</div>
+      <div class="scroller--dots"></div>
+    </div>
+  </div>
+</section>
+
+<!--##########
+__list_banner_li
+##########-->
+
+<li style="--banner-poster: url('{image_path}');" data-white-poster="{white_poster}" data-video="{video_url}" data-mobile-video="{mobile_video_url}">
+  <div class="scroller--content">
+    {__banner_title}
+    {__banner_text}
+    <div class="scroller--content--button--block">
+      <div class="scroller--content--button {white} {mobile}">
+        <a href="{banner_link}">{banner_button_text}</a>
+      </div>
+      {__additional_buttons}
+    </div>
+  </div>
+</li>
+
+<!--##########
+__banner_title
+##########-->
+
+<div class="scroller--content--title {white} {mobile}">{banner_title}</div>
+
+<!--##########
+__banner_text
+##########-->
+
+<div class="scroller--content--text {white} {mobile}">
+  <div class="elements-large-text">{banner_text}</div>
+</div>
+
+<!--##########
+__additional_buttons
+##########-->
+
+<div class="scroller--content--buttons {white} {mobile}">
+  <ul>
+    {__list_additional_buttons}
+  </ul>
+</div>
+
+<!--##########
+__list_additional_buttons
+##########-->
+
+<li><button class="---banner-additional-button outline-button" data-link="{additional_link}">{additional_link_title}</button></li>

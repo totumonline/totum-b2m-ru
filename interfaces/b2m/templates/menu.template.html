@@ -1,0 +1,124 @@
+<!--##########
+main
+##########-->
+
+<div class="header--main--catalog--menu--dropdown">
+  <div class="---catalog-menu {top_menu_status} {custom_catalog}">
+    {__catalog_menu_left}
+    <div class="---catalog-menu--main">
+      {__list_category_block}
+    </div>
+    {__catalog_menu_second}
+  </div>
+</div>
+
+<!--##########
+__catalog_menu_left
+##########-->
+
+<div class="---catalog-menu--left">
+  <ul>
+    {__li_top_level_menu_active}
+    {__list_li_top_level}
+  </ul>
+</div>
+
+<!--##########
+__li_top_level_menu_active
+##########-->
+
+<li style="--category-id: {category_id}" class="__menu-active"><a href="{category_full_url}">{__li_top_level_category_image}<span>{category_name}</span></a></li>
+
+<!--##########
+__list_li_top_level
+##########-->
+
+<li style="--category-id: {category_id}"><a href="{category_full_url}">{__li_top_level_category_image}<span>{category_name}</span></a></li>
+
+<!--##########
+__li_top_level_category_image
+##########-->
+
+<div class="---mobile-catalog-image"><img src="{category_image_url}" alt="{category_name}" loading="lazy"></div>
+
+<!--##########
+__list_category_block
+##########-->
+
+<div class="---category-block {category_active}" style="--category-id: {category_id}">
+  {__category_block_image}
+  <div class="---category-block--content">
+    <a href="{category_full_url}" class="---category-block--content--title"><span>{category_name}</span></a>
+    {__short_description}
+    <ul class="---category-block--content--list">
+      {__list_category_block_li}
+    </ul>
+  </div>
+</div>
+
+<!--##########
+__category_block_image
+##########-->
+
+<div class="---category-block--image">
+  <a href="{category_full_url}">
+    <img src="{category_image_url}" alt="{category_name}" loading="lazy">
+  </a>
+</div>
+
+<!--##########
+__short_description
+##########-->
+
+<div class="---category-block--content--short-description">
+  <div class="elements-small-text">{short_description}</div>
+</div>
+
+<!--##########
+__list_category_block_li
+##########-->
+
+<li>
+  <a href="{category_full_url}">{__li_top_level_category_image}<span>{category_name}</span></a>
+  {__category_block_fourth_level}
+</li>
+
+<!--##########
+__category_block_fourth_level
+##########-->
+
+<ul class="---category-block--content--sublist {__desctop-hidden}">
+  {__list_category_block_fourth_level_li}
+</ul>
+
+<!--##########
+__list_category_block_fourth_level_li
+##########-->
+
+<li>
+  <a href="{category_full_url}">{__li_top_level_category_image}<span>{category_name}</span></a>
+  {__category_block_fourth_level}
+</li>
+
+
+<!--##########
+__catalog_menu_second
+##########-->
+
+<div class="---catalog-menu--second">
+  <div class="---catalog-menu--second--brands">
+    <ul>
+      {__list_brands}
+    </ul>
+  </div>
+</div>
+
+<!--##########
+__list_brands
+##########-->
+
+<li>
+  <a href="{brand_url}" class="---small-brand-card">
+    <img src="{brand_img_url}" alt="{brand_name}">
+  </a>
+</li>
