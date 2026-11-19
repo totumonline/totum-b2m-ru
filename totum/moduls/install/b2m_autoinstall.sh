@@ -12,7 +12,7 @@ if [[ $(sudo locale | grep -c 'LANG=en_US.UTF-8') -ne 1 ]]
 then
   echo "- - - - - - - - - - - - - - - - - - - - - -"
   echo -e "\e[40;1;37mTHIS SERVER HAVE NOT \e[40;1;31men_US.UTF-8\e[40;1;37m LOCALE. YOU HAVE TO EXECUTE:"
-  echo -e "sudo curl -O https://gitverse.ru/api/repos/totumonline/totum-b2m/raw/branch/b2m/totum/moduls/install/setlocale.sh && sudo bash setlocale.sh" 
+  echo -e "sudo curl -O https://raw.githubusercontent.com/totumonline/totum-b2m-ru/b2m/totum/moduls/install/setlocale.sh && sudo bash setlocale.sh" 
   echo -e "AND FOLLOW THE ON-SCREEN INSTRUCTIONS TO SETUP THE CORRECT LOCALE\033[0m"
   echo "- - - - - - - - - - - - - - - - - - - - - -"
   echo
@@ -23,7 +23,7 @@ else
 fi
 
 if [[ "$TOTUMLOCALE" == [Aa] ]]; then
-    sudo curl -O https://gitverse.ru/api/repos/totumonline/totum-b2m/raw/branch/b2m/totum/moduls/install/setlocale.sh && sudo bash setlocale.sh
+    sudo curl -O https://raw.githubusercontent.com/totumonline/totum-b2m-ru/b2m/totum/moduls/install/setlocale.sh && sudo bash setlocale.sh
     echo
     exit 0
 elif [[ "$TOTUMLOCALE" == "RUN" ]]; then
@@ -211,7 +211,7 @@ if [ -f "ansible_b2m_install.yml" ]; then
   echo
 else
 
-sudo curl -O https://gitverse.ru/api/repos/totumonline/totum-b2m/raw/branch/b2m/totum/moduls/install/ansible_b2m_install.yml
+sudo curl -O https://raw.githubusercontent.com/totumonline/totum-b2m-ru/b2m/totum/moduls/install/ansible_b2m_install.yml
 
 fi
 

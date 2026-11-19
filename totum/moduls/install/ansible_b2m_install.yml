@@ -303,7 +303,7 @@
 
   - name: Download totum_fpm.conf
     get_url:
-      url: https://gitverse.ru/api/repos/totumonline/totum-b2m/raw/branch/b2m/totum/moduls/install/totum_pool.conf
+      url: https://raw.githubusercontent.com/totumonline/totum-b2m-ru/b2m/totum/moduls/install/totum_pool.conf
       dest: /etc/php/8.5/fpm/pool.d/totum.conf
       owner: root
       group: root
@@ -371,7 +371,7 @@
 
   - name: Download totum.online.conf
     get_url:
-      url: https://gitverse.ru/api/repos/totumonline/totum-b2m/raw/branch/b2m/totum/moduls/install/totum.online.b2m.conf
+      url: https://raw.githubusercontent.com/totumonline/totum-b2m-ru/b2m/totum/moduls/install/totum.online.b2m.conf
       dest: /etc/nginx/sites-available/totum.online.conf
       owner: root
       group: root
@@ -466,9 +466,9 @@
       path: /home/totum/totum-pro
     register: totum_pro
 
-  - name: Clone Totum B2M RU GitVerse repository
+  - name: Clone Totum B2M RU GitHub repository
     git:
-      repo: https://gitverse.ru/totumonline/totum-b2m.git
+      repo: https://github.com/totumonline/totum-b2m-ru.git
       dest: /home/totum/totum-pro
       version: b2m
       update: yes
