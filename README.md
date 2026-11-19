@@ -24,7 +24,7 @@ Site — [totum.online](https://totum.online)
 
 1-Click native install on Ubuntu 26.04 LTS `ONLY FOR CLEAR SYSTEMS` — [docs.totum.online/ubuntu](https://docs.totum.online/ubuntu)
 ```
-sudo curl -O https://gitverse.ru/api/repos/totumonline/totum-b2m/raw/branch/b2m/totum/moduls/install/b2m_autoinstall.sh && sudo bash b2m_autoinstall.sh
+sudo curl -O https://raw.githubusercontent.com/totumonline/totum-b2m-ru/b2m/totum/moduls/install/b2m_autoinstall.sh && sudo bash b2m_autoinstall.sh
 ```
 Avaliable lang: `EN`, `RU`, `ES`, `DE`
 

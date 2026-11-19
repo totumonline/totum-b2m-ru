@@ -23,7 +23,7 @@ class B2mUpdate extends Command
     {
        if (!$input->getOption('force')) {
             $error = true;
-            $remoteVersionUrl = 'https://gitverse.ru/api/repos/totumonline/totum-b2m/raw/branch/b2m/B2M_VERSION';
+            $remoteVersionUrl = 'https://raw.githubusercontent.com/totumonline/totum-b2m-ru/b2m/B2M_VERSION';
             $localVersionFile = dirname(__DIR__, 2) . '/B2M_VERSION';
             if (is_file($localVersionFile) && ($remoteVersion = @file_get_contents($remoteVersionUrl))) {
                 $localVersion = trim((string)file_get_contents($localVersionFile));
@@ -31,7 +31,7 @@ class B2mUpdate extends Command
                 if (preg_match('/^(\d+)/', $localVersion, $localMatches) && preg_match('/^(\d+)/', $remoteVersion, $remoteMatches)) {
                     if ($localMatches[1] !== $remoteMatches[1]) {
                         die('This update will change the B2M major version from ' . $localVersion . ' to ' . $remoteVersion . '. ' .
-                            'Check server settings and backward compatibility violations at https://gitverse.ru/api/repos/totumonline/totum-b2m/raw/branch/b2m/UPDATES.md ' .
+                            'Check server settings and backward compatibility violations at https://raw.githubusercontent.com/totumonline/totum-b2m-ru/b2m/UPDATES.md ' .
                             'Use --force if you are sure about the update.');
                     } else {
                         $error = false;
