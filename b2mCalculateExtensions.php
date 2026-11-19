@@ -13,7 +13,8 @@ $CalculateExtensions->jsTemplates = '[
   {"name":"extUid","t":"()","d":false,"p":[],"m":[],"n":[]},
   {"name":"extSHA256","t":"(str: \"\")","d":false,"p":["str"],"m":[],"n":["str"]},
   {"name":"extBase64Url","t":"(str: \"\"; hex: )","d":false,"p":["str","hex"],"m":[],"n":["str"]},
-  {"name":"extSitemap","t":"(host: \"\"; url: \"\"; lastmod: \"\"; old: \"\"; delete: false)","d":false,"p":["host","url","lastmod","old","delete"],"m":[],"n":["host","url","lastmod","old"]}
+  {"name":"extSitemap","t":"(host: \"\"; url: \"\"; lastmod: \"\"; old: \"\"; delete: false)","d":false,"p":["host","url","lastmod","old","delete"],"m":[],"n":["host","url","lastmod","old"]},
+  {"name":"extRedirects","t":"(host: \"\"; rid: \"\"; to: \"\"; from: ; delete: false)","d":false,"p":["host","rid","to","from","delete"],"m":[],"n":["host","rid","to","from"]}
 ]';
 
 $CalculateExtensions->extUid = function ($params) {
@@ -160,6 +161,134 @@ $CalculateExtensions->extSitemap = function ($params) {
   } finally {
     flock($fh, LOCK_UN);
     fclose($fh);
+  }
+
+  return true;
+};
+
+$CalculateExtensions->extRedirects = function ($params) {
+  $params = $this->getParamsArray($params);
+
+  $this->__checkRequiredParams($params, ['host', 'rid'], 'extRedirects');
+
+  foreach (['host', 'rid', 'to'] as $name) {
+    if (isset($params[$name]) && is_array($params[$name])) {
+      throw new errorException('Параметр ' . $name . ' должен быть строкой');
+    }
+  }
+
+  $host = strtolower(trim((string)$params['host']));
+  if (!preg_match('#^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$#', $host)) {
+    throw new errorException('Недопустимое значение host');
+  }
+
+  $rid = trim((string)$params['rid']);
+  if (!preg_match('#^\d+-\d+$#', $rid)) {
+    throw new errorException('Параметр rid должен быть вида 3-15');
+  }
+
+  $delete = false;
+  if (isset($params['delete'])) {
+    $delete = is_array($params['delete']) ? null : filter_var($params['delete'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    if ($delete === null) {
+      throw new errorException('Параметр delete должен быть true или false');
+    }
+  }
+
+  $normalizeUrl = function ($value, $name) {
+    $value = trim((string)$value);
+    if (!preg_match('#^/[^\s<>"\'?\#\\\\\x00-\x1f\x7f]*$#', $value)) {
+      throw new errorException('Параметр ' . $name . ' должен начинаться с / и не содержать пробелов, get-параметров и спецсимволов');
+    }
+    return '/' . trim($value, '/');
+  };
+
+  $to = trim((string)($params['to'] ?? ''));
+  $from = [];
+  if (!$delete && $to !== '') {
+    $to = $normalizeUrl($to, 'to');
+
+    $fromList = $params['from'] ?? [];
+    $this->__checkListParam($fromList, 'from');
+    foreach ($fromList as $value) {
+      if (is_array($value)) {
+        throw new errorException('Недопустимое значение в параметре from');
+      }
+      if (trim((string)$value) === '') {
+        continue;
+      }
+      $value = $normalizeUrl($value, 'from');
+      if ($value === $to) {
+        throw new errorException('Адрес ' . $value . ' в from совпадает с to');
+      }
+      $from[$value] = true;
+    }
+    $from = array_keys($from);
+  }
+
+  $dir = __DIR__ . '/http/seo/' . $host;
+  $path = $dir . '/redirects.php';
+  if (!is_file($path)) {
+    throw new errorException('Файл redirects.php для host не найден: ' . $host);
+  }
+
+  $lock = fopen($dir . '/.redirects.lock', 'c');
+  if (!$lock || !flock($lock, LOCK_EX)) {
+    throw new errorException('Не удалось заблокировать redirects.php для host: ' . $host);
+  }
+
+  try {
+    $lines = preg_split('#\R#', (string)file_get_contents($path));
+
+    $start = null;
+    $end = null;
+    foreach ($lines as $i => $line) {
+      if ($start === null) {
+        if (preg_match('#^\s*\$redirects\s*=\s*\[#', $line)) {
+          $start = $i;
+        }
+      } elseif (preg_match('#^\s*\];#', $line)) {
+        $end = $i;
+        break;
+      }
+    }
+    if ($end === null) {
+      throw new errorException('В redirects.php не найден массив $redirects');
+    }
+
+    $kept = [];
+    foreach (array_slice($lines, $start + 1, $end - $start - 1) as $line) {
+      if (preg_match('#//\s*rid:\s*(\S+)\s*$#', $line, $m) && $m[1] === $rid) {
+        continue;
+      }
+      if ($from && preg_match("#^\s*'((?:[^'\\\\]|\\\\.)*)'\s*=>#", $line, $m)) {
+        $key = strtr($m[1], ['\\\\' => '\\', "\\'" => "'"]);
+        if (in_array($key, $from, true)) {
+          throw new errorException('Адрес ' . $key . ' уже используется в другом редиректе: ' . trim($line));
+        }
+      }
+      $kept[] = $line;
+    }
+
+    foreach ($from as $value) {
+      $kept[] = '    ' . var_export($value, true) . ' => ' . var_export($to, true) . ', // rid: ' . $rid;
+    }
+
+    $content = implode("\n", array_merge(array_slice($lines, 0, $start + 1), $kept, array_slice($lines, $end)));
+
+    $tmp = tempnam($dir, '.redirects');
+    if ($tmp === false || file_put_contents($tmp, $content) === false || !chmod($tmp, fileperms($path) & 0777) || !rename($tmp, $path)) {
+      if ($tmp !== false) {
+        @unlink($tmp);
+      }
+      throw new errorException('Не удалось записать redirects.php для host: ' . $host);
+    }
+    if (function_exists('opcache_invalidate')) {
+      opcache_invalidate($path, true);
+    }
+  } finally {
+    flock($lock, LOCK_UN);
+    fclose($lock);
   }
 
   return true;
