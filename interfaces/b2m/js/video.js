@@ -76,6 +76,7 @@ class VideoPlayer {
 
   createVideoElement(mode) {
     const video = document.createElement('video');
+    video.setAttribute('pip', 'false');
     video.muted = true;
     video.defaultMuted = true;
     video.setAttribute('muted', '');

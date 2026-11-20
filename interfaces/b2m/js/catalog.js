@@ -696,6 +696,7 @@ document.addEventListener('click', (e) => {
    - Пауза: блок получает __paused, autoload отключён, пока класс стоит,
      даже если анимация уже шла — следующую партию можно загрузить только кликом.
      Ставится, когда:
+       - прокрутка достигла низа страницы;
        - блок зашёл в верхние 30% viewport (AUTOLOAD_PAUSE_ZONE, или проскочил выше) —
          второй IO с rootMargin -70% снизу, уход за верх viewport ловит основной IO;
          блок без размеров (__hidden) паузу не вызывает;
@@ -738,12 +739,13 @@ function disarmAutoload(block) {
 }
 
 /**
- * Пауза autoload по позиции блока: блок отрисован (не __hidden)
- * и его верх в верхних AUTOLOAD_PAUSE_ZONE процентах viewport
+ * Пауза autoload: блок отрисован (не __hidden) и либо его верх
+ * в верхних AUTOLOAD_PAUSE_ZONE процентах viewport, либо прокрутка достигла низа страницы
  */
 function shouldPauseAutoload(rect) {
   if (rect.width === 0 && rect.height === 0) return false;
-  return rect.top < window.innerHeight * AUTOLOAD_PAUSE_ZONE / 100;
+  const isPageBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 1;
+  return isPageBottom || rect.top < window.innerHeight * AUTOLOAD_PAUSE_ZONE / 100;
 }
 
 /**

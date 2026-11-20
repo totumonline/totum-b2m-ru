@@ -535,6 +535,7 @@ a {
 img {
   -webkit-user-drag: none;
   user-select: none;
+  pointer-events: none;
 }
 
 img[lazy-src] {
@@ -10279,6 +10280,7 @@ body.__pinch-zoomed .---stripe-custom-item-small--title {
 
 .catalog--title-categories--block {
   position: relative;
+  user-select: none;
 }
 
 .catalog--title-categories--block:not(.__poster) {
@@ -18960,7 +18962,7 @@ body.__pinch-zoomed .configurator--open-button {
 
 .---login-form--input--block input {
   flex: 1;
-  padding: 14px 44px 14px 15px;
+  padding: 14px 15px;
   border: none;
   outline: none;
   background: none;
@@ -18978,42 +18980,12 @@ body.__pinch-zoomed .configurator--open-button {
   border-color: var(--red-alert);
 }
 
-.---login-form--input--block .__clear {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 10px;
-  background-color: var(--secondary-button-background-color);
-  color: var(--secondary-button-color);
-  border-radius: var(--button-radius);
-  font-size: 8px;
-  border: none;
-  cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-@media (hover: hover) {
-  .---login-form--input--block .__clear:hover {
-    filter: saturate(1.1) brightness(0.98);
-    color: var(--secondary-button-color-hover);
-  }
-}
-
 .---login-form--input--block .__reveal {
-  position: absolute;
-  right: 0;
-  top: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   width: 44px;
-  height: 100%;
   border: none;
   background: none;
   color: var(--description-color);
@@ -19058,16 +19030,16 @@ body.__pinch-zoomed .configurator--open-button {
     color 0.2s ease;
 }
 
-.auth-signup.__token_auth .---login-form--email--block:has(.__clear.__active) {
+.auth-signup.__token_auth .---login-form--email--block:has(input:not(:placeholder-shown)) {
   grid-template-rows: auto 1fr;
 }
 
-.auth-signup.__token_auth .---login-form--email--block:has(.__clear.__active) .---login-form--input--block {
+.auth-signup.__token_auth .---login-form--email--block:has(input:not(:placeholder-shown)) .---login-form--input--block {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
 }
 
-.auth-signup.__token_auth .---login-form--email--block:has(.__clear.__active) .---login-form--email--token {
+.auth-signup.__token_auth .---login-form--email--block:has(input:not(:placeholder-shown)) .---login-form--email--token {
   padding: 12px 15px;
   opacity: 1;
   visibility: visible;
@@ -19461,7 +19433,7 @@ body.__pinch-zoomed .configurator--open-button {
 
 .---signup-form--input--block input {
   flex: 1;
-  padding: 14px 44px 14px 15px;
+  padding: 14px 15px;
   border: none;
   outline: none;
   background: none;
@@ -19479,42 +19451,12 @@ body.__pinch-zoomed .configurator--open-button {
   border-color: var(--red-alert);
 }
 
-.---signup-form--input--block .__clear {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 10px;
-  background-color: var(--secondary-button-background-color);
-  color: var(--secondary-button-color);
-  border-radius: var(--button-radius);
-  font-size: 8px;
-  border: none;
-  cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-@media (hover: hover) {
-  .---signup-form--input--block .__clear:hover {
-    filter: saturate(1.1) brightness(0.98);
-    color: var(--secondary-button-color-hover);
-  }
-}
-
 .---signup-form--input--block .__reveal {
-  position: absolute;
-  right: 0;
-  top: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   width: 44px;
-  height: 100%;
   border: none;
   background: none;
   color: var(--description-color);
@@ -20690,7 +20632,7 @@ body.__pinch-zoomed .account--connections {
 }
 
 .comparison--clear--bulb {
-  color: var(--description-color);
+  color: var(--text-color-gray);
   font-size: 180px;
 }
 
@@ -21395,6 +21337,10 @@ body.__pinch-zoomed .comparison--grid {
 
 .fa-eye {
   --fa: "\f06e";
+}
+
+.fa-eye-slash {
+  --fa: "\f070";
 }
 
 .fa-arrow-right-long {

@@ -246,6 +246,7 @@ class StoriesPopup {
       slide.appendChild(progress);
 
       var video = document.createElement('video');
+      video.setAttribute('pip', 'false');
       video.src = data.videoSrc;
       video.autoplay = true;
       video.muted = true;
@@ -454,6 +455,7 @@ class StoriesPopup {
     centerSlide.appendChild(progress);
 
     var video = document.createElement('video');
+    video.setAttribute('pip', 'false');
     video.src = data.videoSrc;
     video.autoplay = true;
     video.muted = true;
